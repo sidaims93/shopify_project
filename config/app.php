@@ -53,7 +53,6 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
-    'ngrok_url' => 'https://f674-103-2-134-212.ngrok.io/',
 
     'asset_url' => env('ASSET_URL', null),
 

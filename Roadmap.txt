@@ -1,0 +1,23 @@
+
+
+
+======================= DISCLAIMER =========================== 
+The app will be available on GitHub. Please check the description box for the link.
+==============================================================
+
+Development Road Map for the public app:
+
+1. Completing the installation and creating a user account for the shopify store.
+2. Configure Webhooks to listen to real-time events on the shopify store.
+3. Account configuration and permissions management setup. (Spatie Laravel Permissions package).
+4. UI elements (Login page, dashboard) with code setup. This will be done by taking a free bootstrap template.
+5. Database design for the products and orders data through Laravel migrations.
+6. A quick look at the REST API structure and the error codes.
+7. A quick look at the orders and products API.
+8. Sync products and orders from the Shopify Store.
+9. A quick look at the billing API.
+10. A quick look at the GraphQL API and some implementations.
+11. Account level management (Adding sub-admins with customized permissions).
+
+
+Bootstrap Template - https://bootstrapmade.com/

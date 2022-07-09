@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\InstallComplete;
 use App\Models\Store;
+use App\Models\User;
 use App\Traits\FunctionTrait;
 use App\Traits\RequestTrait;
 use Exception;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
 
 class InstallationController extends Controller {
     use FunctionTrait, RequestTrait;
@@ -42,7 +47,7 @@ class InstallationController extends Controller {
                             $endpoint = 'https://'.$request->shop.
                             '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
                             '&scope='.config('custom.api_scopes').
-                            '&redirect_uri='.config('app.ngrok_url').'shopify/auth/redirect';
+                            '&redirect_uri='.config('app.url').'shopify/auth/redirect';
                             return Redirect::to($endpoint);
                         }
                     } else {
@@ -52,7 +57,7 @@ class InstallationController extends Controller {
                         $endpoint = 'https://'.$request->shop.
                         '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
                         '&scope='.config('custom.api_scopes').
-                        '&redirect_uri='.config('app.ngrok_url').'shopify/auth/redirect';
+                        '&redirect_uri='.config('app.url').'shopify/auth/redirect';
                         return Redirect::to($endpoint);
                     }
                 } else throw new Exception('Shop parameter not present in the request');
@@ -77,7 +82,7 @@ class InstallationController extends Controller {
                         $saveDetails = $this->saveStoreDetailsToDatabase($shopDetails, $accessToken);
                         if($saveDetails) {  
                             //At this point the installation process is complete.
-                            return Redirect::to(config('app.ngrok_url').'shopify/auth/complete');
+                            return Redirect::route('login');
                         } else {
                             Log::info('Problem during saving shop details into the db');
                             Log::info($saveDetails);
@@ -98,13 +103,29 @@ class InstallationController extends Controller {
                 'access_token' => $accessToken,
                 'myshopify_domain' => $shopDetails['myshopify_domain'],
                 'id' => $shopDetails['id'],
+                'email' => $shopDetails['email'],
                 'name' => $shopDetails['name'],
                 'phone' => $shopDetails['phone'],
                 'address1' => $shopDetails['address1'],
                 'address2' => $shopDetails['address2'],
                 'zip' => $shopDetails['zip']
             ];
-            Store::updateOrCreate(['myshopify_domain' => $shopDetails['myshopify_domain']], $payload); 
+            $store_db = Store::updateOrCreate(['myshopify_domain' => $shopDetails['myshopify_domain']], $payload); 
+            $random_password = Str::random(10);
+            Log::info('Password generated '.$random_password); 
+            $user_payload = [
+                'email' => $shopDetails['email'],
+                'password' => bcrypt($random_password),
+                'store_id' => $store_db->table_id,
+                'name' => $shopDetails['name']
+                //'email_verified_at' => date('Y-m-d h:i:s')
+            ];
+            $user = User::updateOrCreate(['email' => $shopDetails['email']], $user_payload);
+            $user->markEmailAsVerified(); //To mark this user verified without requiring them to.
+            Session::flash('success', 'Installation for your store '.$shopDetails['name'].' has completed and the credentials have been sent to '.$shopDetails['email'].'. Please login.');
+            //Create ur own mail handler here
+            //Send the credentials to the registered email address on Shopify.
+            //Mail::to($shopDetails['email'])->send(new InstallComplete($user_payload, $random_password));
             return true;
         } catch(Exception $e) {
             Log::info($e->getMessage().' '.$e->getLine());
