@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\Shopify\ConfigureWebhooks;
 use App\Mail\InstallComplete;
 use App\Models\Store;
 use App\Models\User;
@@ -40,10 +41,9 @@ class InstallationController extends Controller {
                         $validAccessToken = $this->checkIfAccessTokenIsValid($storeDetails);
                         if($validAccessToken) {
                             //Token is valid for Shopify API calls so redirect them to the login page.
-                            print_r('Token is valid in the database so redirect the user to the login page');exit;
+                            return Redirect::route('login');
+                            //print_r('Token is valid in the database so redirect the user to the login page');exit;
                         } else {
-                            //Token is not valid so redirect the user to the re-installation phase.
-                            Log::info('Re-installation for shop '.$request->shop.' Scopes '.config('custom.api_scopes') );
                             $endpoint = 'https://'.$request->shop.
                             '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
                             '&scope='.config('custom.api_scopes').
@@ -51,9 +51,6 @@ class InstallationController extends Controller {
                             return Redirect::to($endpoint);
                         }
                     } else {
-                        //new installation flow should be carried out.
-                        //https://{shop}.myshopify.com/admin/oauth/authorize?client_id={api_key}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
-                        Log::info('New installation for shop '.$request->shop.' Scopes '.config('custom.api_scopes') );
                         $endpoint = 'https://'.$request->shop.
                         '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
                         '&scope='.config('custom.api_scopes').
@@ -72,7 +69,6 @@ class InstallationController extends Controller {
         try {
             $validRequest = $this->validateRequestFromShopify($request->all());
             if($validRequest) {
-                Log::info(json_encode($request->all()));
                 if($request->has('shop') && $request->has('code')) {
                     $shop = $request->shop;
                     $code = $request->code;
@@ -122,6 +118,7 @@ class InstallationController extends Controller {
             ];
             $user = User::updateOrCreate(['email' => $shopDetails['email']], $user_payload);
             $user->markEmailAsVerified(); //To mark this user verified without requiring them to.
+            ConfigureWebhooks::dispatch($store_db->table_id);
             Session::flash('success', 'Installation for your store '.$shopDetails['name'].' has completed and the credentials have been sent to '.$shopDetails['email'].'. Please login.');
             //Create ur own mail handler here
             //Send the credentials to the registered email address on Shopify.
@@ -172,8 +169,6 @@ class InstallationController extends Controller {
             if($response['statusCode'] == 200) {
                 $body = $response['body'];
                 if(!is_array($body)) $body = json_decode($body, true);
-                Log::info('Body here');
-                Log::info($body);
                 if(is_array($body) && isset($body['access_token']) && $body['access_token'] !== null)
                     return $body['access_token'];
             }
@@ -218,8 +213,6 @@ class InstallationController extends Controller {
                 $endpoint = getShopifyURLForStore('shop.json', $storeDetails);
                 $headers = getShopifyHeadersForStore($storeDetails);
                 $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers, null);
-                Log::info('Response for checking the validity of token');
-                Log::info($response);
                 return $response['statusCode'] === 200;
             }
             return false;

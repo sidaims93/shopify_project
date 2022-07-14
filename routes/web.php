@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\WebhooksController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -26,3 +27,14 @@ Route::prefix('shopify')->group(function () {
     Route::get('auth/complete', [InstallationController::class, 'completeInstallation'])->name('app_install_complete');
 });
 
+Route::prefix('webhook')->group(function () {
+    Route::any('order/created', [WebhooksController::class, 'orderCreated']);
+    Route::any('order/updated', [WebhooksController::class, 'orderUpdated']);
+    Route::any('product/created', [WebhooksController::class, 'productCreated']);
+    Route::any('app/uninstall', [WebhooksController::class, 'appUninstalled']);
+    Route::any('shop/updated', [WebhooksController::class, 'shopUpdated']);
+});
+
+//Testing scripts
+Route::get('configure/webhooks/{id}', [WebhooksController::class, 'configureWebhooks']);
+Route::get('delete/webhooks/{id}', [WebhooksController::class, 'deleteWebhooks']);
