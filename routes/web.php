@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ShopifyController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WebhooksController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -17,14 +21,25 @@ use Illuminate\Support\Facades\Route;
 */
 
 Auth::routes();
+Route::get('/', [HomeController::class, 'base']);
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::middleware('auth')->group(function () {
+    Route::get('dashboard', [HomeController::class, 'index'])->name('home');
+    Route::prefix('shopify')->group(function () {
+        Route::get('products', [ShopifyController::class, 'products'])->name('shopify.products');
+        Route::get('orders', [ShopifyController::class,'orders'])->name('shopify.orders');
+        Route::get('customers', [ShopifyController::class, 'customers'])->name('shopify.customers');
+        Route::get('team', [TeamController::class, 'index'])->name('my.team');
+        Route::get('settings', [SettingsController::class, 'settings'])->name('settings');
+        Route::get('profile', [SettingsController::class, 'profile'])->name('my.profile');
+    });
+});
 
 // /shopify/auth
-Route::prefix('shopify')->group(function () {
-    Route::get('auth', [InstallationController::class, 'startInstallation']);
-    Route::get('auth/redirect', [InstallationController::class, 'handleRedirect'])->name('app_install_redirect');
-    Route::get('auth/complete', [InstallationController::class, 'completeInstallation'])->name('app_install_complete');
+Route::prefix('shopify/auth')->group(function () {
+    Route::get('/', [InstallationController::class, 'startInstallation']);
+    Route::get('redirect', [InstallationController::class, 'handleRedirect'])->name('app_install_redirect');
+    Route::get('complete', [InstallationController::class, 'completeInstallation'])->name('app_install_complete');
 });
 
 Route::prefix('webhook')->group(function () {
