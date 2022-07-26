@@ -11,7 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
-
+    
+    protected $with = ['getShopifyStore'];
     /**
      * The attributes that are mass assignable.
      *
@@ -42,4 +43,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function getShopifyStore() {
+        return $this->hasOne(Store::class, 'table_id', 'store_id');
+    }
 }

@@ -32,6 +32,12 @@ Route::middleware('auth')->group(function () {
         Route::get('team', [TeamController::class, 'index'])->name('my.team');
         Route::get('settings', [SettingsController::class, 'settings'])->name('settings');
         Route::get('profile', [SettingsController::class, 'profile'])->name('my.profile');
+
+        Route::prefix('sync')->group(function () {
+            Route::get('customers', [ShopifyController::class, 'syncCustomers'])->name('customers.sync');
+            Route::get('orders', [ShopifyController::class, 'syncOrders'])->name('orders.sync');
+            Route::get('products', [ShopifyController::class, 'syncProducts'])->name('products.sync');
+        });
     });
 });
 
