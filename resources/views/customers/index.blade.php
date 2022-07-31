@@ -13,12 +13,12 @@
                 </nav>
             </div>
             <div class="col-4">
+              @can('write-customers')
                 <button type="button" href="{{route('customers.sync')}}" style="float: right" class="btn btn-primary">Sync Customers</button>
+              @endcan
             </div>
         </div>
     </div><!-- End Page Title -->
-
-
     <section class="section">
       <div class="row">
         <div class="col-lg-12">

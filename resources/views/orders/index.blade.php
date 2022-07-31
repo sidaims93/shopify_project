@@ -13,7 +13,9 @@
                 </nav>
             </div>
             <div class="col-4">
+              @can('write-orders')
                 <button type="button" href="{{route('orders.sync')}}" style="float: right" class="btn btn-primary">Sync Orders</button>
+              @endcan
             </div>
         </div>
     </div><!-- End Page Title -->

@@ -11,5 +11,11 @@ return [
         'products/create' => 'product/created', //When products are created
         'app/uninstalled' => 'app/uninstall', //To know when the app has been removed. 
         'shop/update' => 'shop/updated', //To keep latest data in the stores table
+    ],
+    'default_permissions' => [
+        'write-products', 'read-products',
+        'write-orders', 'read-orders',
+        'write-customers', 'read-customers',
+        'write-members', 'read-members'
     ]
 ];

@@ -14,30 +14,37 @@
           <i class="bi bi-menu-button-wide"></i><span>Shopify</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="components-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
+          @canany(['all-access','write-orders','read-orders'])
           <li>
             <a href="{{route('shopify.orders')}}">
               <i class="bi bi-circle"></i><span>Orders</span>
             </a>
           </li>
+          @endcanany
+          @canany(['all-access','write-products','read-products'])
           <li>
             <a href="{{route('shopify.products')}}">
               <i class="bi bi-circle"></i><span>Products</span>
             </a>
           </li>
+          @endcanany
+          @canany(['all-access','write-customers','read-customers'])
           <li>
             <a href="{{route('shopify.customers')}}">
               <i class="bi bi-circle"></i><span>Customers</span>
             </a>
           </li>
+          @endcanany
         </ul>
       </li><!-- End Components Nav -->
-      
+      @canany(['all-access','write-members','read-members'])
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{{route('my.team')}}">
+        <a class="nav-link collapsed" href="{{route('members.index')}}">
           <i class="bi bi-people"></i>
           <span>My Team</span>
         </a>
       </li><!-- End Contact Page Nav -->
+      @endcanany
       
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{route('settings')}}">

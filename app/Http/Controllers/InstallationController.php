@@ -118,6 +118,9 @@ class InstallationController extends Controller {
             ];
             $user = User::updateOrCreate(['email' => $shopDetails['email']], $user_payload);
             $user->markEmailAsVerified(); //To mark this user verified without requiring them to.
+            $user->assignRole('Admin');
+            foreach(config('custom.default_permissions') as $permission)
+                $user->givePermissionTo($permission);
             ConfigureWebhooks::dispatch($store_db->table_id);
             Session::flash('success', 'Installation for your store '.$shopDetails['name'].' has completed and the credentials have been sent to '.$shopDetails['email'].'. Please login.');
             //Create ur own mail handler here
