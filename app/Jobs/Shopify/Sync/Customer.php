@@ -54,9 +54,9 @@ class Customer implements ShouldQueue {
 
     public function getQueryObjectForCustomers($cursor) {
         try {
-            $mutation = '{';
+            $query = '{';
             $filter = '(first : 5'. ($cursor !== null ? ', after : "'.$cursor.'"' : null).')';
-            $mutation .= '  customers'.$filter.' { 
+            $query .= '  customers'.$filter.' { 
                                 edges { 
                                     node { 
                                         id email 
@@ -68,10 +68,10 @@ class Customer implements ShouldQueue {
                                     hasNextPage endCursor hasPreviousPage startCursor 
                                 } 
                             }';
-            $mutation .= '}';
-            return ['query' => $mutation];
+            $query .= '}';
+            return ['query' => $query];
         } catch(Exception $e) {
-            dd($e->getMessage());
+            return null;
         }
     }
 
