@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\Shopify\Sync\Customer;
 use App\Jobs\Shopify\Sync\Product;
 use App\Models\User;
 use App\Traits\RequestTrait;
@@ -40,6 +41,17 @@ class ShopifyController extends Controller {
         }
     }
 
+    public function syncCustomers() {
+        try {
+            $user = Auth::user();
+            $store = $user->getShopifyStore;
+            Customer::dispatchNow($user, $store);
+            return back()->with('success', 'Customer sync successful');
+        } catch(Exception $e) {
+            dd($e->getMessage());
+        }
+    }
+
     public function acceptCharge(Request $request) {
         try {
             $user = Auth::user();
@@ -63,6 +75,9 @@ class ShopifyController extends Controller {
     }
 
     public function customers() {
-        return view('customers.index');
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $customers = $store->getCustomers()->select(['first_name', 'last_name', 'email', 'phone', 'created_at'])->get();
+        return view('customers.index', ['customers' => $customers]);
     }
 }

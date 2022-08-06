@@ -25,6 +25,7 @@ trait RequestTrait {
             return [
                 'statusCode' => $response->getStatusCode(),
                 'body' => json_decode($response->getBody(), true),
+                //'headers' => $response->getHeaders()
             ];
         } catch(Exception $e) {
             return [

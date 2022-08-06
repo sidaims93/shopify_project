@@ -18,6 +18,7 @@ Development Road Map for the public app:
 9. A quick look at the billing API.
 10. A quick look at the GraphQL API and some implementations.
 11. Account level management (Adding sub-admins with customized permissions).
+12. Integration of private apps on the app.
 
 
 Bootstrap Template - https://bootstrapmade.com/
