@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\SettingsController;
@@ -26,6 +27,13 @@ Route::get('/', [HomeController::class, 'base']);
 Route::middleware('auth')->group(function () {
     
     Route::get('dashboard', [HomeController::class, 'index'])->name('home');
+
+    Route::middleware('role:Admin')->group(function () {
+        Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
+        Route::get('plan/buy/{id}', [BillingController::class, 'buyThisPlan'])->name('plan.buy');
+        Route::any('shopify/rac/accept', [BillingController::class, 'acceptSubscriptionCharge'])->name('plan.accept');
+        Route::get('consume/credits', [BillingController::class, 'consumeCredits'])->name('consume.credits');
+    });
     
     Route::prefix('shopify')->group(function () {
         Route::middleware('permission:write-products|read-products')->group(function () {

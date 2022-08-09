@@ -45,7 +45,14 @@
         </a>
       </li><!-- End Contact Page Nav -->
       @endcanany
-      
+      @role('Admin')
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{{route('billing.index')}}">
+          <i class="bi bi-cash"></i>
+          <span>Billing</span>
+        </a>
+      </li>
+      @endrole
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{route('settings')}}">
           <i class="bi bi-wrench"></i>
