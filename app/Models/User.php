@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
@@ -58,30 +59,35 @@ class User extends Authenticatable {
 
     public function assignCredits($credits) {
         try {
-            //In a real environment you should use Redis (IMPORTANT)
-            //But since this is windows environment I have to use the cache
+            //In a production environment you should use Redis (IMPORTANT)
+            //But since this is windows environment I have to use the cache provided by Laravel
             Cache::put('user_credits_'.$this->id, $credits);
             $last_plan = $this->getLastPlanInfo;
             $last_plan->credits = $credits;
             $last_plan->save();
         } catch(Exception $e) {
-            dd($e->getMessage());
+            Log::info('Problem with assigning credits '.$e->getMessage());
             return true;
         }
     }
 
     public function getCredits() {
-        $credits = Cache::get('user_credits_'.$this->id);
-        if($credits === null) {
-            $credits = $this->getLastPlanInfo->credits;
+        try {
+            $credits = Cache::get('user_credits_'.$this->id);
+            if($credits === null) {
+                $credits = $this->getLastPlanInfo->credits;
+            }
+            return $credits;
+        } catch(Exception $e) {
+            return null;
         }
-        return $credits;
     }
 
     public function consumeCredits($consume_credits) {
         try {
             $credits = $this->getCredits();
-            if($consume_credits > $credits) throw new Exception('Not enough credits in account.', 429);
+            if($consume_credits > $credits) 
+                throw new Exception('Not enough credits in account.', 429);
             $newCredits = $credits - $consume_credits;
             $this->assignCredits($newCredits);
         } catch(Exception $e) {
