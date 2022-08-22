@@ -24,4 +24,12 @@ class Store extends Model {
     public function getProducts() {
         return $this->hasMany(Product::class, 'store_id', 'table_id');
     }
+
+    public function isPublic() {
+        $private = isset($this->api_key) && isset($this->api_secret_key)
+                && $this->api_key !== null && $this->api_secret_key !== null  
+                && strlen($this->api_key) > 0 && strlen($this->api_secret_key) > 0;
+
+        return !$private; // NOT Private means Public
+    }
 }

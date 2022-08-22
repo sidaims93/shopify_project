@@ -37,22 +37,24 @@
           @endcanany
         </ul>
       </li><!-- End Components Nav -->
-      @canany(['all-access','write-members','read-members'])
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{{route('members.index')}}">
-          <i class="bi bi-people"></i>
-          <span>My Team</span>
-        </a>
-      </li><!-- End Contact Page Nav -->
-      @endcanany
-      @role('Admin')
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="{{route('billing.index')}}">
-          <i class="bi bi-cash"></i>
-          <span>Billing</span>
-        </a>
-      </li>
-      @endrole
+      @if(Auth::user()->getShopifyStore->isPublic())
+        @canany(['all-access','write-members','read-members'])
+        <li class="nav-item">
+          <a class="nav-link collapsed" href="{{route('members.index')}}">
+            <i class="bi bi-people"></i>
+            <span>My Team</span>
+          </a>
+        </li><!-- End Contact Page Nav -->
+        @endcanany
+        @role('Admin')
+        <li class="nav-item">
+          <a class="nav-link collapsed" href="{{route('billing.index')}}">
+            <i class="bi bi-cash"></i>
+            <span>Billing</span>
+          </a>
+        </li>
+        @endrole
+      @endif
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{route('settings')}}">
           <i class="bi bi-wrench"></i>

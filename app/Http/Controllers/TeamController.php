@@ -6,7 +6,6 @@ use App\Http\Requests\CreateMember;
 use App\Models\User;
 use App\Traits\RequestTrait;
 use Exception;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -67,7 +66,6 @@ class TeamController extends Controller {
                     'return_url' => config('app.url').'shopify/accept/charge?user_id='.$subuser->id
                 ]
             ];
-
             $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
             if($response['statusCode'] === 201) {
                 $body = $response['body']['application_charge'];

@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShopifyController;
+use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WebhooksController;
 use Illuminate\Support\Facades\Auth;
@@ -24,11 +25,15 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 Route::get('/', [HomeController::class, 'base']);
 
+Route::middleware(['auth', 'permission:all-access'])->group(function () {
+    Route::resource('stores', SuperAdminController::class);
+});
+
 Route::middleware('auth')->group(function () {
     
     Route::get('dashboard', [HomeController::class, 'index'])->name('home');
 
-    Route::middleware('role:Admin')->group(function () {
+    Route::middleware(['role:Admin', 'is_public_app'])->group(function () {
         Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
         Route::get('plan/buy/{id}', [BillingController::class, 'buyThisPlan'])->name('plan.buy');
         Route::any('shopify/rac/accept', [BillingController::class, 'acceptSubscriptionCharge'])->name('plan.accept');
@@ -48,12 +53,13 @@ Route::middleware('auth')->group(function () {
             Route::get('customers', [ShopifyController::class, 'customers'])->name('shopify.customers');
             Route::get('sync/customers', [ShopifyController::class, 'syncCustomers'])->name('customers.sync');     
         });
-        Route::get('settings', [SettingsController::class, 'settings'])->name('settings');
         Route::get('profile', [SettingsController::class, 'profile'])->name('my.profile');
         Route::any('accept/charge', [ShopifyController::class, 'acceptCharge'])->name('accept.charge');
     });
-
-    Route::middleware(['permission:write-members|read-members'])->group(function () {
+    
+    Route::get('settings', [SettingsController::class, 'settings'])->name('settings');
+        
+    Route::middleware(['permission:write-members|read-members', 'is_public_app'])->group(function () {
         Route::resource('members', TeamController::class);
     });
     

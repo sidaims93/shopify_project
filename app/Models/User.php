@@ -52,9 +52,12 @@ class User extends Authenticatable {
         return $this->hasOne(Store::class, 'table_id', 'store_id');
     }
 
+    public function getPlansInfo() {
+        return $this->hasMany(UserPlans::class, 'user_id');
+    }
+
     public function getLastPlanInfo() {
-        return $this->hasOne(UserPlans::class, 'user_id')
-                    ->latest();
+        return $this->hasOne(UserPlans::class, 'user_id')->latest();
     }
 
     public function assignCredits($credits) {
