@@ -70,7 +70,7 @@ class SuperAdminController extends Controller {
                     'store_id' => $newStore->table_id,
                     'name' => $shop_body['name']
                 ];        
-                $this->createAUserLoginForTheStore($request->toArray(), $shop_body, $user_payload);
+                $this->createAUserLoginForTheStore($shop_body, $user_payload);
                 return back()->with('success', 'Installation Successful');
             } 
             return back()->withInput()->with('error', 'Incorrect Credentials');
