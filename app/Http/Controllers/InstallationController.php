@@ -33,36 +33,35 @@ class InstallationController extends Controller {
                 $shop = $request->has('shop'); //Check if shop parameter exists on the request.
                 if($shop) {
                     $storeDetails = $this->getStoreByDomain($request->shop);
-                    if($storeDetails !== null && $storeDetails !== false) {
-                        //store record exists and now determine whether the access token is valid or not
-                        //if not then forward them to the re-installation flow
-                        //if yes then redirect them to the login page.
-
-                        $validAccessToken = $this->checkIfAccessTokenIsValid($storeDetails);
-                        if($validAccessToken) {
-                            //Token is valid for Shopify API calls so redirect them to the login page.
-                            return Redirect::route('login');
-                            //print_r('Token is valid in the database so redirect the user to the login page');exit;
-                        } else {
-                            $endpoint = 'https://'.$request->shop.
-                            '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
-                            '&scope='.config('custom.api_scopes').
-                            '&redirect_uri='.config('app.url').'shopify/auth/redirect';
-                            return Redirect::to($endpoint);
-                        }
-                    } else {
-                        $endpoint = 'https://'.$request->shop.
-                        '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
-                        '&scope='.config('custom.api_scopes').
-                        '&redirect_uri='.config('app.url').'shopify/auth/redirect';
-                        return Redirect::to($endpoint);
-                    }
+                    $endpoint = 'https://'.$request->shop.
+                                '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
+                                '&scope='.config('custom.api_scopes').
+                                '&redirect_uri='.config('app.url').'shopify/auth/redirect';
+                        
+                    return $storeDetails !== null && $storeDetails !== false ?
+                        $this->checkIfTokenIsValidAndResumeInstallation($storeDetails, $request) :
+                        Redirect::to($endpoint);
+                    
                 } else throw new Exception('Shop parameter not present in the request');
             } else throw new Exception('Request is not valid!');
         } catch(Exception $e) {
             Log::info($e->getMessage().' '.$e->getLine());
-            dd($e->getMessage().' '.$e->getLine());
+            print_r($e->getMessage().' '.$e->getLine());
         }
+    }
+
+    private function checkIfTokenIsValidAndResumeInstallation($store, $request) {
+        //store record exists and now determine whether the access token is valid or not
+        //if not then forward them to the re-installation flow
+        //if yes then redirect them to the login page.
+                        
+        return $this->checkIfAccessTokenIsValid($store) ? 
+            Redirect::route('login') : 
+            Redirect::to('https://'.$request->shop.
+                '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
+                '&scope='.config('custom.api_scopes').
+                '&redirect_uri='.config('app.url').'shopify/auth/redirect'
+            );
     }
 
     public function handleRedirect(Request $request) {
@@ -82,14 +81,14 @@ class InstallationController extends Controller {
                         } else {
                             Log::info('Problem during saving shop details into the db');
                             Log::info($saveDetails);
-                            dd('Problem during installation. please check logs.');
+                            return response()->json(['status' => false,'message' => 'Problem during installation. please check logs.']);
                         }
                     } else throw new Exception('Invalid Access Token '.$accessToken);
                 } else throw new Exception('Code / Shop param not present in the URL');
             } else throw new Exception('Request is not valid!');
         } catch(Exception $e) {
             Log::info($e->getMessage().' '.$e->getLine());
-            dd($e->getMessage().' '.$e->getLine());
+            return response()->json(['status' => false, 'message' => $e->getMessage().' '.$e->getLine()]);
         }
     }
 
@@ -116,11 +115,7 @@ class InstallationController extends Controller {
                 'name' => $shopDetails['name']
                 //'email_verified_at' => date('Y-m-d h:i:s')
             ];
-            $user = User::updateOrCreate(['email' => $shopDetails['email']], $user_payload);
-            $user->markEmailAsVerified(); //To mark this user verified without requiring them to.
-            $user->assignRole('Admin');
-            foreach(config('custom.default_permissions') as $permission)
-                $user->givePermissionTo($permission);
+            $this->createAUserLoginForTheStore($store_db, $user_payload);
             ConfigureWebhooks::dispatch($store_db->table_id);
             Session::flash('success', 'Installation for your store '.$shopDetails['name'].' has completed and the credentials have been sent to '.$shopDetails['email'].'. Please login.');
             //Create ur own mail handler here
@@ -133,11 +128,6 @@ class InstallationController extends Controller {
         }
     }
 
-    public function completeInstallation(Request $request) {
-        //At this point the installation is complete so redirect the browser to either the login page or anywhere u want.
-        print_r('Installation complete !!');exit;
-    }
-
     private function getShopDetailsFromShopify($shop, $accessToken) {
         try {
             $endpoint = getShopifyURLForStore('shop.json', ['myshopify_domain' => $shop]);
@@ -145,7 +135,8 @@ class InstallationController extends Controller {
             $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers);
             if($response['statusCode'] == 200) {
                 $body = $response['body'];
-                if(!is_array($body)) $body = json_decode($body, true);
+                if(!is_array($body)) 
+                    $body = json_decode($body, true);
                 return $body['shop'] ?? null;
             } else {
                 Log::info('Response recieved for shop details');

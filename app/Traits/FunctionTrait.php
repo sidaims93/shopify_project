@@ -3,13 +3,25 @@
 namespace App\Traits;
 
 use App\Models\Store;
+use App\Models\User;
 use Exception;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 trait FunctionTrait {
     public function getStoreByDomain($shop) {
         return Store::where('myshopify_domain', $shop)->first();
     }
+
+    public function createAUserLoginForTheStore($shop_body, $user_payload) {
+        $user = User::updateOrCreate(['email' => $shop_body['email']], $user_payload);
+        $user->markEmailAsVerified(); //To mark this user verified without requiring them to.
+        $user->assignRole('Admin');
+        foreach(config('custom.default_permissions') as $permission)
+            $user->givePermissionTo($permission);
+        return true;
+    }
+
 
     public function validateRequestFromShopify($request) {
         try {
