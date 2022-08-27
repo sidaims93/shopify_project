@@ -5,6 +5,12 @@
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{{route('real.time.notifications')}}">
+          <i class="bi bi-circle"></i>
+          <span>Send Real-time Notifications</span>
+        </a>
       </li><!-- End Dashboard Nav -->
       <li class="nav-item">
         <a class="nav-link" data-bs-target="#components-nav" data-bs-toggle="collapse" aria-expanded="true" href="#">

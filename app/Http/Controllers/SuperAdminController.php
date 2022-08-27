@@ -9,6 +9,7 @@ use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -68,5 +69,9 @@ class SuperAdminController extends Controller {
         } catch(Exception $e) {
             return back()->with('error', $e->getMessage().' '.$e->getLine());          
         } 
+    }
+
+    public function sendNotification() {
+        return view('superadmin.notifications.index', ['users' => User::where('id', '<>', Auth::user()->id)->select(['id','name',])->get()->toArray()]);
     }
 }

@@ -27,6 +27,7 @@ Route::get('/', [HomeController::class, 'base']);
 
 Route::middleware(['auth', 'permission:all-access'])->group(function () {
     Route::resource('stores', SuperAdminController::class);
+    Route::get('notifications', [SuperAdminController::class, 'sendNotification'])->name('real.time.notifications');
 });
 
 Route::middleware('auth')->group(function () {
