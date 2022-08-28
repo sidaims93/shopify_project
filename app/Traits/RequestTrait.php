@@ -54,4 +54,21 @@ trait RequestTrait {
 
         return ['statusCode' => $httpCode, 'body' => $sBody];
     }
+
+    //For emitting Socket IO Messages
+    public function sendSocketIONotification($channel, $message) {
+        try {
+            $endpoint = 'http://localhost:3000/broadcast';
+            $endpoint .= '?channel='.$channel.'&message='.$message;
+            $headers = ['Content-Type' => 'application/json', 'Accept' => 'application/json'];
+            $client = new Client();
+            $response = $client->request('GET', $endpoint, ['headers' => $headers]);
+            return [
+                'statusCode' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody(), true),
+            ];
+        } catch(Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
 }

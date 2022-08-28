@@ -97,4 +97,11 @@ class User extends Authenticatable {
             throw $e;
         }
     }
+
+    public function getChannelName($purpose) {
+        switch($purpose) {
+            case 'messages': return 'receiveNotificationToUser_'.$this->id;
+            default: return null;
+        }
+    }
 }

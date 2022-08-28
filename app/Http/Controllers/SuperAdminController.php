@@ -71,7 +71,18 @@ class SuperAdminController extends Controller {
         } 
     }
 
-    public function sendNotification() {
+    public function sendIndex() {
         return view('superadmin.notifications.index', ['users' => User::where('id', '<>', Auth::user()->id)->select(['id','name',])->get()->toArray()]);
+    }
+
+    public function sendMessage(Request $request) {
+        try {
+            $user = User::where('id', (int) $request->user)->select(['id', 'name'])->first();
+            $channel = $user->getChannelName('messages'); //Function in User.php Model
+            $response = $this->sendSocketIONotification($channel, $request->message);
+            return response()->json(['status' => true, 'message' => 'Sent message!', 'response' => $response]);    
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' =>$e->getMessage().' '.$e->getLine()]);
+        }
     }
 }
