@@ -62,16 +62,16 @@
 
 <script>
   $('#dt-table').DataTable({
-      processing: true,
-      serverSide: true,
-      ajax: '{{route('customers.list')}}',
-      columns: [
-        {data: '#', name: '#'},
-        {data: 'first_name', name: 'first_name'},
-        {data: 'email', name: 'email'},
-        {data: 'phone', name: 'phone'},
-        {data: 'created_at', name: 'created_at'}
-      ]
+    processing: true,
+    serverSide: true,
+    ajax: '{{route('customers.list')}}',
+    columns: [
+      {data: '#', name: '#'},
+      {data: 'first_name', name: 'first_name'},
+      {data: 'email', name: 'email'},
+      {data: 'phone', name: 'phone'},
+      {data: 'created_at', name: 'created_at'}
+    ]
   });
 </script>
 @endsection
