@@ -80,51 +80,52 @@ class ShopifyController extends Controller {
 
     public function list(Request $request) {
         try {
-            $request = $request->all();
+            if($request->ajax()) {
+                $request = $request->all();
 
+                $store = Auth::user()->getShopifyStore; //Take the auth user's shopify store
+                $customers = $store->getCustomers(); //Load the relationship (Query builder)
+
+                $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']); //Select columns
+                
+                if(isset($request['search']) && isset($request['search']['value'])) 
+                    $customers = $this->filterCustomers($customers, $request); //Filter customers based on the search term
+
+                $count = $customers->count(); //Take the total count returned so far
             
-            $store = Auth::user()->getShopifyStore; //Take the auth user's shopify store
-            $customers = $store->getCustomers(); //Load the relationship (Query builder)
-
-            $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']); //Select columns
+                $limit = $request['length'];
+                $offset = $request['start'];
             
-            if(isset($request['search']) && isset($request['search']['value'])) 
-                $customers = $this->filterCustomers($customers, $request); //Filter customers based on the search term
+                $customers = $customers->offset($offset)->limit($limit); //LIMIT and OFFSET logic for MySQL
 
-            $count = $customers->count(); //Take the total count returned so far
-        
-            $limit = $request['length'];
-            $offset = $request['start'];
-        
-            $customers = $customers->offset($offset)->limit($limit); //LIMIT and OFFSET logic for MySQL
+                if(isset($request['order']) && isset($request['order'][0]))
+                    $customers = $this->orderCustomers($customers, $request); //Order customers based on the column
+                
+                $data = [];
+                
+                $query = $customers->toSql(); //For debugging the SQL query generated so far
 
-            if(isset($request['order']) && isset($request['order'][0]))
-                $customers = $this->orderCustomers($customers, $request); //Order customers based on the column
+                $rows = $customers->get(); //Fetch from DB by using get() function
+
+                if($rows !== null)
+                    foreach ($rows as $key => $item)
+                        $data[] = array_merge(
+                                        ['#' => $key + 1], //To show the first column, NOTE: Do not show the table_id column to the viewer
+                                        $item->toArray()
+                                );
+                
+                return response()->json([
+                    "draw" => intval(request()->query('draw')),
+                    "recordsTotal"    => intval($count),
+                    "recordsFiltered" => intval($count),
+                    "data" => $data,
+                    "debug" => [
+                        "request" => $request,
+                        "sqlQuery" => $query
+                    ]
+                ], 200);
+            }
             
-            $data = [];
-            
-            $query = $customers->toSql(); //For debugging the SQL query generated so far
-
-            $rows = $customers->get(); //Fetch from DB by using get() function
-
-            if($rows !== null)
-                foreach ($rows as $key => $item)
-                    $data[] = array_merge(
-                                    ['#' => $key + 1], //To show the first column, NOTE: Do not show the table_id column to the viewer
-                                    $item->toArray()
-                              );
-            
-            return response()->json([
-                "draw" => intval(request()->query('draw')),
-                "recordsTotal"    => intval($count),
-                "recordsFiltered" => intval($count),
-                "data" => $data,
-                "debug" => [
-                    "request" => $request,
-                    "sqlQuery" => $query
-                ]
-            ], 200);
-
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage().' '.$e->getLine()], 500);
         }
