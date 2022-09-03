@@ -81,9 +81,8 @@ class ShopifyController extends Controller {
     public function list(Request $request) {
         try {
             $request = $request->all();
-            $limit = $request['length'];
-            $offset = $request['start'];
-        
+
+            
             $store = Auth::user()->getShopifyStore; //Take the auth user's shopify store
             $customers = $store->getCustomers(); //Load the relationship (Query builder)
 
@@ -93,6 +92,10 @@ class ShopifyController extends Controller {
                 $customers = $this->filterCustomers($customers, $request); //Filter customers based on the search term
 
             $count = $customers->count(); //Take the total count returned so far
+        
+            $limit = $request['length'];
+            $offset = $request['start'];
+        
             $customers = $customers->offset($offset)->limit($limit); //LIMIT and OFFSET logic for MySQL
 
             if(isset($request['order']) && isset($request['order'][0]))
