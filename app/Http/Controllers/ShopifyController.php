@@ -84,25 +84,30 @@ class ShopifyController extends Controller {
             $limit = $request['length'];
             $offset = $request['start'];
         
-            $store = Auth::user()->getShopifyStore; //Take the auth user's store
+            $store = Auth::user()->getShopifyStore; //Take the auth user's shopify store
             $customers = $store->getCustomers(); //Load the relationship (Query builder)
 
-            $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']);
+            $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']); //Select columns
             
             if(isset($request['search']) && isset($request['search']['value'])) 
-                $customers = $this->filterCustomers($customers, $request);
+                $customers = $this->filterCustomers($customers, $request); //Filter customers based on the search term
 
-            $count = $customers->count();        
-            $customers = $customers->offset($offset)->limit($limit);
+            $count = $customers->count(); //Take the total count returned so far
+            $customers = $customers->offset($offset)->limit($limit); //LIMIT and OFFSET logic for MySQL
+
             if(isset($request['order']) && isset($request['order'][0]))
-                $customers = $this->orderCustomers($customers, $request);
+                $customers = $this->orderCustomers($customers, $request); //Order customers based on the column
             
             $data = [];
-            $rows = $customers->get();
+            
+            $query = $customers->toSql(); //For debugging the SQL query generated so far
+
+            $rows = $customers->get(); //Fetch from DB by using get() function
+
             if($rows !== null)
                 foreach ($rows as $key => $item)
                     $data[] = array_merge(
-                                    ['#' => $key + 1], 
+                                    ['#' => $key + 1], //To show the first column, NOTE: Do not show the table_id column to the viewer
                                     $item->toArray()
                               );
             
@@ -111,37 +116,42 @@ class ShopifyController extends Controller {
                 "recordsTotal"    => intval($count),
                 "recordsFiltered" => intval($count),
                 "data" => $data,
-                "Request" => $request
+                "debug" => [
+                    "request" => $request,
+                    "sqlQuery" => $query
+                ]
             ], 200);
 
         } catch(Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => $e->getMessage().' '.$e->getLine()], 500);
         }
     }
 
+    //Returns a Query builders after setting the logic for ordering customers by specified column
     public function orderCustomers($customers, $request) {
         $column = $request['order'][0]['column'];
         $dir = $request['order'][0]['dir'];
-        $db_column = '';
+        $db_column = null;
         switch($column) {
             case 0: $db_column = 'table_id'; break;
             case 1: $db_column = 'first_name'; break;
             case 2: $db_column = 'email'; break;
             case 3: $db_column = 'phone'; break; 
             case 4: $db_column = 'created_at'; break;
+            default: $db_column = 'table_id';
         }
         return $customers->orderBy($db_column, $dir);   
     }
 
+    //Returns a Query builder after setting the logic for filtering customers by the search term
     public function filterCustomers($customers, $request) {
-        return $customers->where(function ($e) use ($request) {
-            $term = $request['search']['value'];
-            $e->where(function ($query) use ($term) {
-                $query->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$term."%")
-                    ->orWhere('email', 'LIKE', '%'.$term.'%')
-                    ->orWhere('phone', 'LIKE', '%'.$term.'%');
-
-            });
+        $term = $request['search']['value'];
+        return $customers->where(function ($query) use ($term) {
+            $query->where(
+                        DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$term."%"
+                    )
+                  ->orWhere('email', 'LIKE', '%'.$term.'%')
+                  ->orWhere('phone', 'LIKE', '%'.$term.'%');
         });
     }
 }
