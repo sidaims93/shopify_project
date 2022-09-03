@@ -1,4 +1,8 @@
 @extends('layouts.app')
+@section('css')
+  <link href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+@endsection
 @section('content')
 
     <div class="pagetitle">
@@ -26,10 +30,9 @@
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Your Customers</h5>
-              {{-- <p>Add lightweight datatables to your project with using the <a href="https://github.com/fiduswriter/Simple-DataTables" target="_blank">Simple DataTables</a> library. Just add <code>.datatable</code> class name to any table you wish to conver to a datatable</p> --}}
 
               <!-- Table with stripped rows -->
-              <table class="table datatable">
+              <table class="" id="dt-table">
                 <thead>
                   <tr>
                     <th scope="col">#</th>
@@ -40,17 +43,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @isset($customers)
-                    @foreach($customers as $key => $customer)
-                      <tr>
-                        <td>{{$key + 1}}</td>
-                        <td>{{$customer['first_name'].' '.$customer['last_name']}}</td>
-                        <td>{{$customer['email']}}</td>
-                        <td>{{$customer['phone']}}</td>
-                        <td>{{date('Y-m-d', strtotime($customer['created_at']))}}</td>
-                      </tr>
-                    @endforeach
-                  @endisset
+                  
                 </tbody>
               </table>
               <!-- End Table with stripped rows -->
@@ -60,4 +53,26 @@
         </div>
       </div>
     </section>
+@endsection
+
+@section('scripts')
+
+<script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+  console.log($('#dt-table').length)
+  $('#dt-table').DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: '{{route('customers.list')}}',
+      columns: [
+        {data: '#', name: '#'},
+        {data: 'first_name', name: 'first_name'},
+        {data: 'email', name: 'email'},
+        {data: 'phone', name: 'phone'},
+        {data: 'created_at', name: 'created_at'}
+      ]
+  });
+</script>
 @endsection

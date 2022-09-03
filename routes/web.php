@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
         });
         Route::middleware('permission:write-customers|read-customers')->group(function () {
             Route::get('customers', [ShopifyController::class, 'customers'])->name('shopify.customers');
+            Route::any('customerList', [ShopifyController::class, 'list'])->name('customers.list');
             Route::get('sync/customers', [ShopifyController::class, 'syncCustomers'])->name('customers.sync');     
         });
         Route::get('profile', [SettingsController::class, 'profile'])->name('my.profile');
