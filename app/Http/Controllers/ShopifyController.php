@@ -37,7 +37,7 @@ class ShopifyController extends Controller {
             Product::dispatchNow($user, $store);
             return back()->with('success', 'Product sync successful');
         } catch(Exception $e) {
-            dd($e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }
     }
 
@@ -48,7 +48,7 @@ class ShopifyController extends Controller {
             Customer::dispatchNow($user, $store);
             return back()->with('success', 'Customer sync successful');
         } catch(Exception $e) {
-            dd($e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }
     }
 
@@ -70,7 +70,7 @@ class ShopifyController extends Controller {
             User::where('id', $user_id)->delete();
             return redirect()->route('members.create')->with('error', 'Some problem occurred while processing the transaction. Please try again.');
         } catch(Exception $e) {
-
+            return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }
     }
 
@@ -80,31 +80,38 @@ class ShopifyController extends Controller {
 
     public function list(Request $request) {
         try {
-            
+            $request = $request->all();
             $limit = $request['length'];
             $offset = $request['start'];
         
             $store = Auth::user()->getShopifyStore; //Take the auth user's store
             $customers = $store->getCustomers(); //Load the relationship (Query builder)
 
-            $columns = ['first_name', 'last_name', 'email', 'phone', 'created_at'];
-            $customers = $customers->select($columns);
-            $customers = $this->filterCustomers($customers, $request);
+            $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']);
+            
+            if(isset($request['search']) && isset($request['search']['value'])) 
+                $customers = $this->filterCustomers($customers, $request);
 
             $count = $customers->count();        
             $customers = $customers->offset($offset)->limit($limit);
-            $customers = $customers->orderBy('created_at', 'desc');
+            if(isset($request['order']) && isset($request['order'][0]))
+                $customers = $this->orderCustomers($customers, $request);
+            
             $data = [];
             $rows = $customers->get();
             if($rows !== null)
                 foreach ($rows as $key => $item)
-                    $data[] = array_merge(['#' => $key + 1], $item->toArray());
+                    $data[] = array_merge(
+                                    ['#' => $key + 1], 
+                                    $item->toArray()
+                              );
             
             return response()->json([
                 "draw" => intval(request()->query('draw')),
                 "recordsTotal"    => intval($count),
                 "recordsFiltered" => intval($count),
-                "data" => $data
+                "data" => $data,
+                "Request" => $request
             ], 200);
 
         } catch(Exception $e) {
@@ -112,20 +119,29 @@ class ShopifyController extends Controller {
         }
     }
 
+    public function orderCustomers($customers, $request) {
+        $column = $request['order'][0]['column'];
+        $dir = $request['order'][0]['dir'];
+        $db_column = '';
+        switch($column) {
+            case 0: $db_column = 'table_id'; break;
+            case 1: $db_column = 'first_name'; break;
+            case 2: $db_column = 'email'; break;
+            case 3: $db_column = 'phone'; break; 
+            case 4: $db_column = 'created_at'; break;
+        }
+        return $customers->orderBy($db_column, $dir);   
+    }
+
     public function filterCustomers($customers, $request) {
         return $customers->where(function ($e) use ($request) {
-            if(isset($request['searchTerm']) && !is_null($request['searchTerm'])) {
-                
-                if($request['searchBy'] === 'name') 
-                    $e->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$request['searchTerm']."%");
-                
-                if($request['searchBy'] === 'email') 
-                    $e->where('email', 'LIKE', '%'.$request['searchTerm'].'%');
-                
-                if($request['searchBy'] === 'phone') 
-                    $e->where('phone', 'LIKE', '%'.$request['searchTerm'].'%');
-                    
-            }
+            $term = $request['search']['value'];
+            $e->where(function ($query) use ($term) {
+                $query->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$term."%")
+                    ->orWhere('email', 'LIKE', '%'.$term.'%')
+                    ->orWhere('phone', 'LIKE', '%'.$term.'%');
+
+            });
         });
     }
 }
