@@ -75,9 +75,6 @@ class ShopifyController extends Controller {
     }
 
     public function customers() {
-        $user = Auth::user();
-        $store = $user->getShopifyStore;
-        //$customers = $store->getCustomers()->select(['first_name', 'last_name', 'email', 'phone', 'created_at'])->get();
         return view('customers.index');
     }
 
