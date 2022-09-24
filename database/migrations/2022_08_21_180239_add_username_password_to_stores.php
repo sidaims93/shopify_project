@@ -15,7 +15,7 @@ class AddUsernamePasswordToStores extends Migration
     {
         Schema::table('stores', function (Blueprint $table) {
             $table->string('api_key')->nullable()->after('access_token');
-            $table->string('api_secret_key')->nullable()->after('apiKey');
+            $table->string('api_secret_key')->nullable()->after('api_key');
         });
     }
 

@@ -48,6 +48,14 @@ class User extends Authenticatable {
         'email_verified_at' => 'datetime',
     ];
 
+    public function getSidebarKey() {
+        return $this->id.'-show-sidebar';
+    }
+
+    public function loginSecurity() {
+        return $this->hasOne(LoginSecurity::class);
+    }
+
     public function getShopifyStore() {
         return $this->hasOne(Store::class, 'table_id', 'store_id');
     }

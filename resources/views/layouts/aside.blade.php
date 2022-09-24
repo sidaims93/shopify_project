@@ -56,9 +56,9 @@
         @endrole
       @endif
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{{route('settings')}}">
+        <a class="nav-link collapsed" href="{{route('show2FASettings')}}">
           <i class="bi bi-wrench"></i>
-          <span>Settings</span>
+          <span>Security</span>
         </a>
       </li><!-- End Contact Page Nav -->
       

@@ -3,6 +3,7 @@
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\LoginSecurityController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShopifyController;
 use App\Http\Controllers\SuperAdminController;
@@ -31,7 +32,7 @@ Route::middleware(['auth', 'permission:all-access'])->group(function () {
     Route::post('send/message', [SuperAdminController::class, 'sendMessage'])->name('send.web.message');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['two_fa', 'auth'])->group(function () {
     
     Route::get('dashboard', [HomeController::class, 'index'])->name('home');
 
@@ -61,6 +62,13 @@ Route::middleware('auth')->group(function () {
     });
     
     Route::get('settings', [SettingsController::class, 'settings'])->name('settings');
+    Route::prefix('two_factor_auth')->group(function () {
+        Route::get('/', [LoginSecurityController::class, 'show2faForm'])->name('show2FASettings');
+        Route::post('generateSecret', [LoginSecurityController::class, 'generate2faSecret'])->name('generate2faSecret');
+        Route::post('enable2fa', [LoginSecurityController::class, 'enable2fa'])->name('enable2fa');
+        Route::post('disable2fa', [LoginSecurityController::class, 'disable2fa'])->name('disable2fa');
+        Route::middleware('two_fa')->post('/2faVerify', function () { return redirect(URL()->previous()); })->name('2faVerify');
+    });
         
     Route::middleware(['permission:write-members|read-members', 'is_public_app'])->group(function () {
         Route::resource('members', TeamController::class);
