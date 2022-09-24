@@ -2,7 +2,7 @@
   $sidebar_key = Auth::user()->getSidebarKey();
   $show_sidebar = Session::get($sidebar_key);
 @endphp
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 @include('layouts.head')
 <body>  
