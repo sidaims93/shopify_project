@@ -34,7 +34,8 @@
                             </form>
                         @elseif(!$data['user']->loginSecurity->google2fa_enable)
                             <br><h5><b>Enable 2Factor Authentication for your account</b></h5><br>
-                            <p><b> Step 1.</b> Scan this QR code with your Google Authenticator App.<br> Alternatively, you can use the code: <b>{{ $data['secret'] }}</b></p>
+                            <p><b> Step 1.</b> Scan this QR code with your Google Authenticator App.
+                            <!-- <br> Alternatively, you can use the code: <b>{{ $data['secret'] }}</b></p> -->
                             <div class="text-center">
                                 <img src="{{$data['google2fa_url'] }}" alt="">
                             </div>

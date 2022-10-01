@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\Shopify\Sync\Customer;
+use App\Jobs\Shopify\Sync\Order;
 use App\Jobs\Shopify\Sync\Product;
 use App\Models\User;
 use App\Traits\RequestTrait;
@@ -20,7 +21,10 @@ class ShopifyController extends Controller {
     }
 
     public function orders() {
-        return view('orders.index');
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $orders = $store->getOrders()->select(['name', 'email', 'phone', 'created_at'])->get();
+        return view('orders.index', ['orders' => $orders]);
     }
 
     public function products() {
@@ -47,6 +51,17 @@ class ShopifyController extends Controller {
             $store = $user->getShopifyStore;
             Customer::dispatchNow($user, $store);
             return back()->with('success', 'Customer sync successful');
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
+        }
+    }
+
+    public function syncOrders() {
+        try {
+            $user = Auth::user();
+            $store = $user->getShopifyStore;
+            Order::dispatchNow($user, $store);
+            return back()->with('success', 'Order sync successful');
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }

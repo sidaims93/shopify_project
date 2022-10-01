@@ -32,4 +32,11 @@ class Store extends Model {
 
         return !$private; // NOT Private means Public
     }
+
+    public function getOrdersPayload($payload) {
+        $temp = [];
+        foreach(config('custom.table_indexes.orders_table_indexes') as $column => $type)
+            $temp[$column] = $payload[$column] ?? null;
+        return $temp;
+    }
 }
