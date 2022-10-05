@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class Order implements ShouldQueue {
-    private $store;
+    private $user, $store, $mode, $indexes_to_insert;
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, RequestTrait;
 
     /**
@@ -22,13 +22,197 @@ class Order implements ShouldQueue {
      *
      * @return void
      */
-    public function __construct($user, $store) {
+    public function __construct($user, $store, $mode = 'REST') {
         $this->user = $user;
         $this->store = $store;
+        $this->mode = $mode;
         $this->indexes_to_insert = config('custom.table_indexes.orders_table_indexes');
     }
 
     public function handle() {
+        if($this->mode === 'GraphQL')
+            $this->handleWithGraphQLAPI();
+        else
+            $this->handleWithRESTAPI();
+    }
+
+    public function handleWithGraphQLAPI() {
+        try{
+            $headers = getGraphQLHeadersForStore($this->store);
+            $endpoint = getShopifyURLForStore('graphql.json', $this->store);
+            $cursor = null;
+            do {
+                $query = $this->getQueryObjectForOrders($cursor);
+                $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $query);
+                if($response['statusCode'] === 200) 
+                    $this->saveOrderResponseInDB($response['body']['data']['orders']['edges']);
+                $cursor = $this->getCursorFromResponse($response['body']['data']['orders']['pageInfo']);
+            } while($cursor !== null);
+        } catch(Exception $e) {
+            dd($e->getMessage().' '.$e->getLine());
+        }
+    }
+
+    private function getCursorFromResponse($pageInfo) {
+        try {
+            return $pageInfo['hasNextPage'] === true ? $pageInfo['endCursor'] : null;
+        } catch(Exception $e) {
+            Log::info($e->getMessage());
+            return null;
+        }
+    }
+
+    private function saveOrderResponseInDB($orders) {
+        $db_orders = [];
+        if($orders !== null && count($orders) > 0) {
+            foreach($orders as $order) {
+                $db_orders[] = $this->formatOrderForDB($order['node']);
+            }
+        }
+        $ordersTableString = $this->getOrdersTableString($db_orders);
+        if($ordersTableString !== null)
+            $this->insertOrders($ordersTableString); 
+    }
+
+    private function formatOrderForDB($order) {
+        $temp_payload = [];
+        foreach($order as $attribute => $value) {
+            $key = $this->getEquivalentDBColumnForGraphQLKey($attribute);
+            if($key !== null)
+                $temp_payload[$key] = is_array($value) ? json_encode($value) : $value;
+        }
+        $temp_payload['store_id'] = $this->store->table_id;
+        $temp_payload['line_items'] = $this->formatLineItems($order['lineItems']);
+        $temp_payload['shipping_address'] = $this->formatBillingAndShippingAddress($order['shippingAddress']);
+        $temp_payload['billing_address'] = $this->formatBillingAndShippingAddress($order['billingAddress']);
+        $temp_payload['fulfillments'] = $this->formatFulfillmentsForOrder($order['fulfillments']);
+        foreach($temp_payload as $key => $val)
+            $temp_payload[$key] = is_array($val) ? json_encode($val) : $val;
+        return $temp_payload;
+    }
+
+    private function formatFulfillmentsForOrder($fulfillments) {
+        try {
+            return $fulfillments;
+        } catch(Exception $e) {
+            return null;
+        }
+    }
+
+    private function formatBillingAndShippingAddress($shippingAddress) {
+        try {
+            return [
+                'first_name' => $shippingAddress['firstName'],
+                'address1' => $shippingAddress['address1'],
+                'phone' => $shippingAddress['phone'],
+                'city' => $shippingAddress['city'],
+                'zip' => $shippingAddress['zip'],
+                'province' => $shippingAddress['province'],
+                'country' => $shippingAddress['country'],
+                'last_name' => $shippingAddress['lastName'],
+                'address2' => $shippingAddress['address2'],
+                'name' => $shippingAddress['firstName'].' '.$shippingAddress['lastName'],
+            ];
+        } catch(Exception $e) {
+            return null;
+        }
+    }
+
+    private function formatLineItems($lineItems) {
+        try {
+            $arr = [];
+            $edges = $lineItems['edges'];
+            foreach($edges as $nodes) {
+                $item = $nodes['node'];
+                $arr[] = [
+                    'id' => (int) str_replace('gid://shopify/LineItem/', '', $item['id']),
+                    'admin_graphql_api_id' => $item['id'],
+                    'fulfillable_quantity' => $item['unfulfilledQuantity'],
+                    'name' => $item['title'],
+                    'variant_title' => $item['variantTitle'],
+                    'vendor' => $item['vendor'],
+                    'sku' => $item['sku'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['variant']['price'],
+                    'price_set' => $item['originalTotalSet'],
+                    'product_id' => (int) str_replace('gid://shopify/Product/', '', $item['product']['id']),
+                    'variant_id' => (int) str_replace('gid://shopify/ProductVariant/', '', $item['variant']['id']),
+                    'variant_title' => $item['variant']['title']
+                ];
+            }
+            return $arr;
+        } catch(Exception $e) {
+            return null;
+        }
+    }
+
+    private function getEquivalentDBColumnForGraphQLKey($attribute) {
+        switch($attribute) {
+            case 'email': return 'email';
+            case 'name': return 'name';
+            case 'processedAt': return 'processed_at';
+            case 'taxesIncluded': return 'taxes_included';
+            case 'legacyResourceId': return 'id';
+            case 'displayFinancialStatus': return 'financial_status';
+            case 'closedAt': return 'closed_at';
+            case 'cancelReason': return 'cancel_reason';
+            case 'cancelledAt': return 'cancelled_at';
+            case 'createdAt': return 'created_at';
+            case 'updatedAt': return 'updated_at';
+            case 'tags': return 'tags';
+            case 'phone': return 'phone';
+            default: return null;
+        }
+    }
+
+    public function getQueryObjectForOrders($cursor) {
+        try {
+            $query = '{';
+            $filter = '(first : 5'. ($cursor !== null ? ', after : "'.$cursor.'"' : null).')';
+            $query .= '  orders'.$filter.' { 
+                            edges { 
+                                node { 
+                                    id email name processedAt registeredSourceUrl taxesIncluded 
+                                    legacyResourceId fulfillable customerLocale phone
+                                    displayFinancialStatus confirmed closed closedAt cancelReason cancelledAt 
+                                    createdAt updatedAt tags
+                                    lineItems (first: 20) {
+                                        edges {
+                                            node { 
+                                                id image { id altText url width } name nonFulfillableQuantity 
+                                                originalTotalSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } }
+                                                product { id productType title vendor updatedAt tags publishedAt handle descriptionHtml description createdAt } 
+                                                quantity sku taxLines { priceSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } } rate ratePercentage title }  
+                                                taxable title unfulfilledQuantity variantTitle variant { barcode compareAtPrice createdAt displayName id image { id altText url width } inventoryQuantity price title updatedAt } vendor 
+                                            }
+                                        }
+                                        pageInfo { 
+                                            hasNextPage endCursor hasPreviousPage startCursor 
+                                        } 
+                                    }
+                                    fulfillments { createdAt deliveredAt displayStatus estimatedDeliveryAt id inTransitAt legacyResourceId location {id name} name status totalQuantity trackingInfo {company number url} } 
+                                    totalPriceSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } } 
+                                    shippingLine { carrierIdentifier id title custom code phone originalPriceSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } } source shippingRateHandle }
+                                    shippingAddress { address1 address2 city country firstName lastName phone province zip }
+                                    billingAddress { address1 address2 city country firstName lastName phone province zip }
+                                    fulfillments { id createdAt updatedAt deliveredAt displayStatus estimatedDeliveryAt legacyResourceId name status trackingInfo { company number url } updatedAt }
+                                    customer { canDelete createdAt displayName email firstName  hasTimelineComment locale note updatedAt id lastName }
+                                    currentSubtotalPriceSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } }
+                                    currentTaxLines { channelLiable priceSet { presentmentMoney { amount currencyCode } shopMoney { amount currencyCode } } rate ratePercentage title }
+                                } 
+                            } 
+                            pageInfo { 
+                                hasNextPage endCursor hasPreviousPage startCursor 
+                            } 
+                        }';
+            $query .= '}';
+            return ['query' => $query];
+        } catch(Exception $e) {
+            return null;
+        }
+    }
+
+    public function handleWithRESTAPI() {
         try{
             $since_id = 0;
             $payload = [];

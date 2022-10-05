@@ -38,7 +38,7 @@ class ShopifyController extends Controller {
         try {
             $user = Auth::user();
             $store = $user->getShopifyStore;
-            Product::dispatchNow($user, $store);
+            Product::dispatch($user, $store);
             return back()->with('success', 'Product sync successful');
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
@@ -49,18 +49,21 @@ class ShopifyController extends Controller {
         try {
             $user = Auth::user();
             $store = $user->getShopifyStore;
-            Customer::dispatchNow($user, $store);
+            Customer::dispatch($user, $store);
             return back()->with('success', 'Customer sync successful');
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }
     }
 
+
+    //Sync orders for Store using either GraphQL or REST API
     public function syncOrders() {
         try {
             $user = Auth::user();
             $store = $user->getShopifyStore;
-            Order::dispatchNow($user, $store);
+            Order::dispatch($user, $store, 'GraphQL'); //For using GraphQL API
+            //Order::dispatch($user, $store); //For using REST API
             return back()->with('success', 'Order sync successful');
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
@@ -97,38 +100,26 @@ class ShopifyController extends Controller {
         try {
             if($request->ajax()) {
                 $request = $request->all();
-
                 $store = Auth::user()->getShopifyStore; //Take the auth user's shopify store
                 $customers = $store->getCustomers(); //Load the relationship (Query builder)
-
                 $customers = $customers->select(['first_name', 'last_name', 'email', 'phone', 'created_at']); //Select columns
-                
                 if(isset($request['search']) && isset($request['search']['value'])) 
                     $customers = $this->filterCustomers($customers, $request); //Filter customers based on the search term
-
                 $count = $customers->count(); //Take the total count returned so far
-            
                 $limit = $request['length'];
                 $offset = $request['start'];
-            
                 $customers = $customers->offset($offset)->limit($limit); //LIMIT and OFFSET logic for MySQL
-
                 if(isset($request['order']) && isset($request['order'][0]))
                     $customers = $this->orderCustomers($customers, $request); //Order customers based on the column
-                
                 $data = [];
-                
                 $query = $customers->toSql(); //For debugging the SQL query generated so far
-
                 $rows = $customers->get(); //Fetch from DB by using get() function
-
                 if($rows !== null)
                     foreach ($rows as $key => $item)
                         $data[] = array_merge(
                                         ['#' => $key + 1], //To show the first column, NOTE: Do not show the table_id column to the viewer
                                         $item->toArray()
                                 );
-                
                 return response()->json([
                     "draw" => intval(request()->query('draw')),
                     "recordsTotal"    => intval($count),
