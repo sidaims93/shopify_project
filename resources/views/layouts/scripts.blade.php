@@ -12,7 +12,6 @@
 <script src="{{asset('assets/js/main.js')}}"></script>
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 
-<!--Socket IO Script-->
-<script src="https://cdn.socket.io/4.0.1/socket.io.min.js?v={{$version}}"></script>
-<script src="{{asset('assets/js/socketio_script.js')}}?v={{$version}}"></script>
-
+<!-- Socket IO Script. Enable it if you want it.-->
+<!-- <script src="https://cdn.socket.io/4.0.1/socket.io.min.js?v={{$version}}"></script> -->
+<!-- <script src="{{asset('assets/js/socketio_script.js')}}?v={{$version}}"></script> -->

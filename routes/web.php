@@ -4,6 +4,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\LoginSecurityController;
+use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShopifyController;
 use App\Http\Controllers\SuperAdminController;
@@ -46,7 +47,10 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
     Route::prefix('shopify')->group(function () {
         Route::middleware('permission:write-products|read-products')->group(function () {
             Route::get('products', [ShopifyController::class, 'products'])->name('shopify.products');
-            Route::get('sync/products', [ShopifyController::class, 'syncProducts'])->name('products.sync');
+            Route::get('products/create', [ProductsController::class, 'create'])->name('shopify.product.create');
+            Route::get('add_variant', [ProductsController::class, 'getHTMLForAddingVariant'])->name('product.add.variant');
+            Route::get('sync/products', [ShopifyController::class, 'syncProducts'])->name('shopify.products.sync');
+            Route::post('products/publish', [ProductsController::class, 'publishProduct'])->name('shopify.product.publish');
         });
         Route::middleware('permission:write-orders|read-orders')->group(function () {
             Route::get('orders', [ShopifyController::class,'orders'])->name('shopify.orders');
