@@ -17,6 +17,7 @@
         <table class="table table-borderless">
             <tbody>
             <tr>
+                <td><a href="{{route('locations.sync')}}" style="float: right;" class="btn btn-success">Sync Locations</a></td>
                 <td><a href="{{route('shopify.products')}}" style="float: right" class="btn btn-primary">Back</a></td>
             </tr>
             </tbody>
@@ -108,7 +109,7 @@
 
         $(document).on("click", ".remove_variant", function(e) {
             e.preventDefault();
-            $(this).parent().parent().remove();
+            $(this).parent().parent().parent().remove();
         });
     </script>
 @endsection

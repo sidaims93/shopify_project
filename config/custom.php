@@ -31,5 +31,10 @@ return [
             'string', 'line_items' => 'string', 'shipping_lines' => 'string', 'billing_address' => 'string', 'fulfillments' => 'string', 'shipping_address' => 'string', /*'client_details' => 'string',*/ 'refunds' => 'string', /*'payment_details' => 'string',*/ 'customer' =>
             'string'
         ],
+        'locations_table_indexes' => [
+            'store_id' => 'int', 'id' => 'int', 'name' => 'string', 'address1' => 'string', 'address2' => 'string', 'city' => 'string', 'zip' => 'string', 'province' => 'string', 'phone' => 'string', 
+            'created_at' => 'string', 'updated_at' => 'string', 'country_code' => 'string', 'country_name' => 'string', 'province_code' => 'string', 'legacy' => 'int', 'active' => 'int',
+            'admin_graphql_api_id' => 'string', 'localized_country_name' => 'string', 'localized_province_name' => 'string'
+        ],
     ]
 ];

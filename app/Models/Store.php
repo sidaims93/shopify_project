@@ -25,6 +25,10 @@ class Store extends Model {
         return $this->hasMany(Product::class, 'store_id', 'table_id');
     }
 
+    public function getLocations() {
+        return $this->hasMany(StoreLocation::class, 'store_id', 'table_id');
+    }
+
     public function isPublic() {
         $private = isset($this->api_key) && isset($this->api_secret_key)
                 && $this->api_key !== null && $this->api_secret_key !== null  
@@ -36,6 +40,13 @@ class Store extends Model {
     public function getOrdersPayload($payload) {
         $temp = [];
         foreach(config('custom.table_indexes.orders_table_indexes') as $column => $type)
+            $temp[$column] = $payload[$column] ?? null;
+        return $temp;
+    }
+
+    public function getLocationsPayload($payload) {
+        $temp = [];
+        foreach(config('custom.table_indexes.locations_table_indexes') as $column => $type)
             $temp[$column] = $payload[$column] ?? null;
         return $temp;
     }

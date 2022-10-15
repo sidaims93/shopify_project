@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\Shopify\Sync\Customer;
+use App\Jobs\Shopify\Sync\Locations;
 use App\Jobs\Shopify\Sync\Order;
 use App\Jobs\Shopify\Sync\Product;
 use App\Models\User;
@@ -163,5 +164,16 @@ class ShopifyController extends Controller {
                   ->orWhere('email', 'LIKE', '%'.$term.'%')
                   ->orWhere('phone', 'LIKE', '%'.$term.'%');
         });
+    }
+    
+    public function syncLocations() {
+        try {
+            $user = Auth::user();
+            $store = $user->getShopifyStore;
+            Locations::dispatch($user, $store);
+            return back()->with('success', 'Locations synced successfully');
+        } catch(Exception $e) {
+            dd($e->getMessage().' '.$e->getLine());
+        }
     }
 }

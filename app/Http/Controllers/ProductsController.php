@@ -17,14 +17,17 @@ class ProductsController extends Controller {
     }
 
     public function create() {
-        return view('products.create');
+        $locations = Auth::user()->getShopifyStore->getLocations()->select(['id', 'name'])->where('legacy', 0)->get();
+        return view('products.create', ['locations' => $locations]);
     }
 
     public function getHTMLForAddingVariant(Request $request) {
+        $locations = Auth::user()->getShopifyStore->getLocations()->select(['id', 'name'])->where('legacy', 0)->get();
         return response()->json([
             'status' => true, 
             'html' => view('products.partials.add_variant', [
-                'count' => $request->count
+                'count' => $request->count,
+                'locations' => $locations
             ])->render()
         ]);
     }
@@ -33,7 +36,8 @@ class ProductsController extends Controller {
         $request = $request->all();
         $user = Auth::user();
         $store = $user->getShopifyStore;
-        $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublish($request).'}) { 
+        $locations = $store->getLocations()->where('legacy', 0)->select(['id', 'name', 'admin_graphql_api_id', 'legacy'])->get()->toArray();
+        $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublish($request, $locations).'}) { 
             product { id }
             userErrors { field message }
         }';
@@ -58,7 +62,7 @@ class ProductsController extends Controller {
         }
     }
 
-    private function getGraphQLPayloadForProductPublish($request) {
+    private function getGraphQLPayloadForProductPublish($request, $locations) {
         $temp = [];
         $temp[] = 
           ' title: "'.$request['title'].'",
@@ -72,12 +76,13 @@ class ProductsController extends Controller {
             $temp[] = ' tags: ['.$this->returnTags($request['tags']).']';
         if(isset($request['variant_title']) && is_array($request['variant_title'])) {
             $temp[] = ' options: ["'.implode(', ',$request['variant_title']).'"]';
-            $temp[] = ' variants: ['.$this->getVariantsGraphQLConfig($request).']';
+            $temp[] = ' variants: ['.$this->getVariantsGraphQLConfig($request, $locations).']';
         }  
+
         return implode(',', $temp);
     }
 
-    private function getVariantsGraphQLConfig($request) {
+    private function getVariantsGraphQLConfig($request, $locations) {
         try {
             //dd($request);
             if(is_array($request['variant_title'])) {
@@ -89,12 +94,29 @@ class ProductsController extends Controller {
                         compareAtPrice: '.$request['variant_caprice'][$key].',
                         sku: "'.$request['sku'][$key].'",
                         options: [ "'.$variant_title.'" ],
+                        inventoryItem: {cost: '.$request['variant_price'][$key].', tracked: true},
+                        inventoryQuantities: '.$this->getInventoryQuantitiesString($key, $request, $locations).',
+                        inventoryManagement: SHOPIFY,
+                        inventoryPolicy: DENY,                
                         price: '.$request['variant_price'][$key].' }';
                     }
                 }
                 return implode(',', $str); 
         } catch(Exception $e) {
+            dd($e->getMessage().' '.$e->getLine());
             return null;
         }
+    }
+
+    public function getInventoryQuantitiesString($key, $request, $locations) {
+        $str = '[';
+        $temp_payload = [];
+        foreach($locations as $location){
+            if(isset($request[$location['id'].'_inventory_'.($key+1)]))
+                $temp_payload[] = '{ availableQuantity: '.$request[$location['id'].'_inventory_'.($key+1)].', locationId: "'.$location['admin_graphql_api_id'].'" }';
+        }
+        $str .= implode(',', $temp_payload);
+        $str .= ']';
+        return $str;
     }
 }
