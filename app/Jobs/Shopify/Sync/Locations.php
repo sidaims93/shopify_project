@@ -38,7 +38,7 @@ class Locations implements ShouldQueue
     public function handle() {
         try{
             $payload = [];
-            $orders_payload = [];
+            $locations_payload = [];
             $endpoint = getShopifyURLForStore('locations.json', $this->store);
             $headers = getShopifyHeadersForStore($this->store, 'GET');
             $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers);
@@ -50,11 +50,11 @@ class Locations implements ShouldQueue
                         $temp_payload[$key] = is_array($v) ? json_encode($v) : $v;
                     $temp_payload = $this->store->getLocationsPayload($temp_payload);
                     $temp_payload['store_id'] = (int) $this->store->table_id;
-                    $orders_payload[] = $temp_payload;
+                    $locations_payload[] = $temp_payload;
                 } 
-                $ordersTableString = $this->getLocationsTableString($orders_payload);
-                if($ordersTableString !== null)
-                    $this->insertLocations($ordersTableString);    
+                $locationsTableString = $this->getLocationsTableString($locations_payload);
+                if($locationsTableString !== null)
+                    $this->insertLocations($locationsTableString);    
             }
         } catch (Exception $e) { 
             Log::critical(['code' => $e->getCode(), 'message' => $e->getMessage(), 'trace' => json_encode($e->getTrace())]); 

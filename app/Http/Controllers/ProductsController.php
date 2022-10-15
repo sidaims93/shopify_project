@@ -10,19 +10,35 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProductsController extends Controller {
+    private $legacy;
     use RequestTrait, FunctionTrait;
 
     public function __construct() {
         $this->middleware('auth');        
+        $this->legacy = 1;
     }
 
     public function create() {
-        $locations = Auth::user()->getShopifyStore->getLocations()->select(['id', 'name'])->where('legacy', 0)->get();
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $locations = $this->getLocationsForStore($store);
         return view('products.create', ['locations' => $locations]);
     }
 
+    private function getLocationsForStore($store) {
+        $locations = $store->getLocations()->where('legacy', $this->legacy)->select(['id', 'name', 'admin_graphql_api_id', 'legacy']);
+        if($this->legacy === 1) {
+            //Return only one of the locations because shopify wouldnt allow maintaining inventories via multiple shopify apps.
+            $locations = $locations->limit(1);
+        }
+        //If not then you can select Shopify's default locations
+        return $locations->get(); 
+    }
+
     public function getHTMLForAddingVariant(Request $request) {
-        $locations = Auth::user()->getShopifyStore->getLocations()->select(['id', 'name'])->where('legacy', 0)->get();
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $locations = $this->getLocationsForStore($store);
         return response()->json([
             'status' => true, 
             'html' => view('products.partials.add_variant', [
@@ -36,16 +52,18 @@ class ProductsController extends Controller {
         $request = $request->all();
         $user = Auth::user();
         $store = $user->getShopifyStore;
-        $locations = $store->getLocations()->where('legacy', 0)->select(['id', 'name', 'admin_graphql_api_id', 'legacy'])->get()->toArray();
+        $locations = $this->getLocationsForStore($store);
         $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublish($request, $locations).'}) { 
             product { id }
             userErrors { field message }
         }';
+        //dd($productCreateMutation);
         $mutation = 'mutation { '.$productCreateMutation.' }';
         $endpoint = getShopifyURLForStore('graphql.json', $store);
         $headers = getShopifyHeadersForStore($store);
         $payload = ['query' => $mutation];
         $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
+        //dd($response);
         Product::dispatch($user, $store);
         return back()->with('success', 'Product Created!');
     }
@@ -96,7 +114,7 @@ class ProductsController extends Controller {
                         options: [ "'.$variant_title.'" ],
                         inventoryItem: {cost: '.$request['variant_price'][$key].', tracked: true},
                         inventoryQuantities: '.$this->getInventoryQuantitiesString($key, $request, $locations).',
-                        inventoryManagement: SHOPIFY,
+                        inventoryManagement: '. ( $this->legacy === 1 ? 'FULFILLMENT_SERVICE' : 'SHOPIFY' ).',
                         inventoryPolicy: DENY,                
                         price: '.$request['variant_price'][$key].' }';
                     }
@@ -108,6 +126,7 @@ class ProductsController extends Controller {
         }
     }
 
+    //Had to do $key + 1 because PHP starts its arrays with 0 and i was having counter starting from 1 in the frontend
     public function getInventoryQuantitiesString($key, $request, $locations) {
         $str = '[';
         $temp_payload = [];
