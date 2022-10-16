@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\DevOpsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\LoginSecurityController;
@@ -26,6 +27,16 @@ use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 Route::get('/', [HomeController::class, 'base']);
+
+
+Route::prefix('devops')->middleware(['guest:devops'])->group(function () {
+    Route::get('login', [DevOpsController::class, 'devOpsLogin'])->name('devops.login');
+    Route::post('login', [DevOpsController::class, 'checkLogin'])->name('devops.login.submit');
+});
+
+Route::prefix('devops')->middleware(['auth:devops'])->group(function () {
+    Route::get('dashboard', [DevOpsController::class, 'dashboard'])->name('devops.home');
+});
 
 Route::middleware(['auth', 'permission:all-access'])->group(function () {
     Route::resource('stores', SuperAdminController::class);
