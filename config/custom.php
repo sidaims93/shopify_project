@@ -4,7 +4,18 @@ return [
     'shopify_api_key' => env('SHOPIFY_API_KEY', '8271b83e7ad33fb6a78b9f915d61749e'),
     'shopify_api_secret' => env('SHOPIFY_API_SECRET', '44cf53b978770d7d0652c85aad4634f7'),
     'shopify_api_version' => '2022-07',
-    'api_scopes' => 'write_orders,write_fulfillments,write_customers,write_fulfillments,write_products',
+    'api_scopes' => [
+        'write_orders',
+        'write_fulfillments',
+        'write_customers',
+        'write_products',
+        'read_third_party_fulfillment_orders',
+        'third_party_fulfillment_orders',
+        'write_assigned_fulfillment_orders',
+        'read_assigned_fulfillment_orders',
+        'read_merchant_managed_fulfillment_orders',
+        'write_merchant_managed_fulfillment_orders'
+    ],
     'webhook_events' => [
         'orders/create' => 'order/created', //When the store recieves an order
         'orders/updated' => 'order/updated', //When an order is updated
@@ -36,5 +47,10 @@ return [
             'created_at' => 'string', 'updated_at' => 'string', 'country_code' => 'string', 'country_name' => 'string', 'province_code' => 'string', 'legacy' => 'int', 'active' => 'int',
             'admin_graphql_api_id' => 'string', 'localized_country_name' => 'string', 'localized_province_name' => 'string'
         ],
+        'fulfillment_orders_table_index' => [
+            'order_table_id' => 'int', 'id' => 'int', 'shop_id' => 'int', 'order_id' => 'int', 'assigned_location_id' => 'int', 'request_status' => 'string',
+            'status' => 'string', 'supported_actions' => 'string', 'fulfill_at' => 'string', 'fulfill_by' => 'string', 'destination' => 'string',
+            'line_items' => 'string', 'delivery_method' => 'string', 'assigned_location' => 'string', 'merchant_requests' => 'string'
+        ]
     ]
 ];

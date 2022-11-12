@@ -66,6 +66,8 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
         });
         Route::middleware('permission:write-orders|read-orders')->group(function () {
             Route::get('orders', [ShopifyController::class,'orders'])->name('shopify.orders');
+            Route::post('order/fulfill', [ShopifyController::class, 'fulfillOrder'])->name('shopify.order.fulfill');
+            Route::get('order/{id}', [ShopifyController::class, 'showOrder'])->name('shopify.order.show');
             Route::get('sync/orders', [ShopifyController::class, 'syncOrders'])->name('orders.sync');
         });
         Route::middleware('permission:write-customers|read-customers')->group(function () {

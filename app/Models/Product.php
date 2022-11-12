@@ -11,4 +11,8 @@ class Product extends Model {
     protected $guarded = [];
     public $timestamps = false;
 
+    public function getImages() {
+        return is_array($this->images) ? $this->images : json_decode($this->images, true); 
+    }
+
 }

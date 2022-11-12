@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Store extends Model {
     
@@ -37,6 +39,24 @@ class Store extends Model {
         return !$private; // NOT Private means Public
     }
 
+    public function getProductImagesForOrder($order) {
+        try {
+            $products_images = [];
+            $product_ids = $order->getProductIdsForLineItems();
+            $products = null;
+            if($product_ids !== null && count($product_ids) > 0) {
+                $products = $this->getProducts()->whereIn('id', $product_ids)->select(['id', 'images'])->get();
+                if($products !== null && $products->count() > 0)
+                    foreach($products as $product)
+                        $products_images[$product->id] = $product->getImages();
+            }
+        } catch(Exception $e) {
+            Log::info($e->getMessage().' '.$e->getLine());
+            return [];
+        }
+        return $products_images;
+    }
+
     public function getOrdersPayload($payload) {
         $temp = [];
         foreach(config('custom.table_indexes.orders_table_indexes') as $column => $type)
@@ -47,6 +67,13 @@ class Store extends Model {
     public function getLocationsPayload($payload) {
         $temp = [];
         foreach(config('custom.table_indexes.locations_table_indexes') as $column => $type)
+            $temp[$column] = $payload[$column] ?? null;
+        return $temp;
+    }
+
+    public function getOrderFulfillmentsPayload($payload) {
+        $temp = [];
+        foreach(config('custom.table_indexes.fulfillment_orders_table_index') as $column => $type)
             $temp[$column] = $payload[$column] ?? null;
         return $temp;
     }

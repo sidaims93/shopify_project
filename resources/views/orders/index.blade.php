@@ -36,6 +36,7 @@
                     <th scope="col">#</th>
                     <th scope="col">Name</th>
                     <th scope="col">Customer Email</th>
+                    <th scope="col" class="text-center">Payment Status</th>
                     <th scope="col">Customer Phone</th>
                     <th scope="col">Created Date</th>
                   </tr>
@@ -45,8 +46,9 @@
                     @foreach($orders as $key => $order)
                     <tr>
                       <td>{{$key + 1}}</td>
-                      <td>{{$order->name}}</td>
+                      <td><a class="btn-link" href="{{route('shopify.order.show', $order->table_id)}}">{{$order->name}}</a></td>
                       <td>{{$order->email}}</td>
+                      <td class="text-center">{{$order->getPaymentStatus()}}</td>
                       <td>{{$order->phone}}</td>
                       <td>{{date('Y-m-d h:i:s', strtotime($order->created_at))}}</td>
                     </tr>
@@ -54,6 +56,9 @@
                   @endisset
                 </tbody>
               </table>
+              <div class="text-center pb-2">
+                {{$orders->links()}}
+              </div>
               <!-- End Table with stripped rows -->
             </div>
           </div>

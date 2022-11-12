@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FulfillOrder;
 use App\Jobs\Shopify\Sync\Customer;
 use App\Jobs\Shopify\Sync\Locations;
+use App\Jobs\Shopify\Sync\OneOrder;
 use App\Jobs\Shopify\Sync\Order;
+use App\Jobs\Shopify\Sync\OrderFulfillments;
 use App\Jobs\Shopify\Sync\Product;
 use App\Models\User;
 use App\Traits\RequestTrait;
@@ -12,6 +15,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ShopifyController extends Controller {
 
@@ -24,8 +28,95 @@ class ShopifyController extends Controller {
     public function orders() {
         $user = Auth::user();
         $store = $user->getShopifyStore;
-        $orders = $store->getOrders()->select(['name', 'email', 'phone', 'created_at'])->get();
+        $orders = $store->getOrders()->select(['table_id', 'financial_status', 'name', 'email', 'phone', 'created_at'])->paginate(15);
         return view('orders.index', ['orders' => $orders]);
+    }
+
+    public function showOrder($id) {
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $order = $store->getOrders()->where('table_id', $id)->first();  
+        if($order->getFulfillmentOrderDataInfo()->doesntExist())
+            OrderFulfillments::dispatch($user, $store, $order);
+        $product_images = $store->getProductImagesForOrder($order);
+        return view('orders.show', [
+            'order_currency' => getCurrencySymbol($order->currency), 
+            'product_images' => $product_images, 
+            'order' => $order
+        ]);
+    }
+
+    private function getFulfillmentLineItem($request, $order) {
+        try {
+            $search = (int) $request['lineItemId'];
+            $fulfillment_orders = $order->getFulfillmentOrderDataInfo;
+            foreach($fulfillment_orders as $fulfillment_order) {
+                $line_items = $fulfillment_order->line_items;
+                foreach($line_items as $item) {
+                    if($item['line_item_id'] === $search) // Found it!
+                        return $line_items;
+                }
+            }
+            return null;
+        } catch(Exception $e) {
+            return null;
+        }
+    }
+
+    private function getPayloadForFulfillment($line_items, $request) {
+        return [
+            'fulfillment' => [
+                'message' => $request['message'],
+                'notify_customer' => $request['notify_customer'] === 'on',
+                'tracking_info' => [
+                    'number' => $request['number'],
+                    'url' => $request['tracking_url'],
+                    'company' => $request['shipping_company']
+                ],
+                'line_items_by_fulfillment_order' => $this->getFulfillmentOrderArray($line_items, $request)
+            ]
+        ];
+    }
+
+    private function getFulfillmentOrderArray($line_items, $request) {
+        $temp_payload = [];
+        $search = (int) $request['lineItemId'];
+        foreach($line_items as $line_item)
+            if($line_item['line_item_id'] === $search) 
+                $temp_payload[] = [
+                    'fulfillment_order_id' => $line_item['fulfillment_order_id'],
+                    'fulfillment_order_line_items' => [[
+                        'id' => $line_item['id'],
+                        'quantity' => (int) $request['no_of_packages']
+                    ]]
+                ];
+        return $temp_payload;
+    }
+
+    public function fulfillOrder(FulfillOrder $request) {
+        try {
+            $request = $request->all();
+            $user = Auth::user();
+            $store = $user->getShopifyStore;
+            $order = $store->getOrders()->where('table_id', (int) $request['order_id'])->first();
+            $fulfillment_line_item = $this->getFulfillmentLineItem($request, $order);
+            
+            if($fulfillment_line_item !== null) {
+                
+                $payload = $this->getPayloadForFulfillment($fulfillment_line_item, $request);
+                $endpoint = getShopifyURLForStore('fulfillments.json', $store);
+                $headers = getShopifyHeadersForStore($store);
+                $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
+                
+                if($response['statusCode'] === 201)
+                    OneOrder::dispatch($user, $store, $order->id);
+                
+                return response()->json($response);
+            }
+            return response()->json(['status' => false]);
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage().' '.$e->getLine()]);
+        }
     }
 
     public function products() {
@@ -63,8 +154,8 @@ class ShopifyController extends Controller {
         try {
             $user = Auth::user();
             $store = $user->getShopifyStore;
-            Order::dispatch($user, $store, 'GraphQL'); //For using GraphQL API
-            //Order::dispatch($user, $store); //For using REST API
+            //Order::dispatch($user, $store, 'GraphQL'); //For using GraphQL API
+            Order::dispatch($user, $store); //For using REST API
             return back()->with('success', 'Order sync successful');
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);

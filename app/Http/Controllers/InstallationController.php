@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 
 class InstallationController extends Controller {
+    private $api_scopes, $api_key, $api_secret;
+    public function __construct() {
+        $this->api_scopes = implode(',', config('custom.api_scopes'));
+        $this->api_key = config('custom.shopify_api_key');
+        $this->api_secret = config('custom.shopify_api_secret');
+    }
+
     use FunctionTrait, RequestTrait;
 
     /**
@@ -45,16 +52,16 @@ class InstallationController extends Controller {
                             //print_r('Token is valid in the database so redirect the user to the login page');exit;
                         } else {
                             $endpoint = 'https://'.$request->shop.
-                            '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
-                            '&scope='.config('custom.api_scopes').
-                            '&redirect_uri='.config('app.url').'shopify/auth/redirect';
+                            '/admin/oauth/authorize?client_id='.$this->api_key.
+                            '&scope='.$this->api_scopes.
+                            '&redirect_uri='.route('app_install_redirect');
                             return Redirect::to($endpoint);
                         }
                     } else {
                         $endpoint = 'https://'.$request->shop.
-                        '/admin/oauth/authorize?client_id='.config('custom.shopify_api_key').
-                        '&scope='.config('custom.api_scopes').
-                        '&redirect_uri='.config('app.url').'shopify/auth/redirect';
+                        '/admin/oauth/authorize?client_id='.$this->api_key.
+                        '&scope='.$this->api_scopes.
+                        '&redirect_uri='.route('app_install_redirect');
                         return Redirect::to($endpoint);
                     }
                 } else throw new Exception('Shop parameter not present in the request');
@@ -164,8 +171,8 @@ class InstallationController extends Controller {
             $endpoint = 'https://'.$shop.'/admin/oauth/access_token';
             $headers = ['Content-Type: application/json'];
             $requestBody = json_encode([
-                'client_id' => config('custom.shopify_api_key'),
-                'client_secret' => config('custom.shopify_api_secret'),
+                'client_id' => $this->api_key,
+                'client_secret' => $this->api_secret,
                 'code' => $code
             ]);
             $response = $this->makeAPOSTCallToShopify($requestBody, $endpoint, $headers);

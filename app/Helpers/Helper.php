@@ -35,3 +35,56 @@
                 && strlen($store['api_key']) > 0 && strlen($store['api_secret_key']) > 0; 
     }
 
+    function getCurrencySymbol($code) {
+        switch($code) {
+            case 'INR': return '₹ ';
+            case 'EUR': return '€ ';
+            case 'UAH': return '₴ ';
+            case 'PLN': return 'zł ';
+            case 'RON': return 'Lei ';
+            case 'CZK': return 'Kč ';
+            case 'SEK': return 'SEK ';
+            case 'HUF': return 'Ft ';
+            case 'BYN': return 'BYN ';
+            case 'BGN': return 'лв. ';
+            case 'DKK': return 'DKK ';
+            case 'NOK': return 'NOK ';
+            case 'HRK': return 'kn ';
+            case 'MDL': return 'L ';
+            case 'BAM': return 'KM ';
+            case 'ALL': return 'Lek ';
+            case 'MKD': return 'ден ';
+            case 'ISK': return 'kr ';
+            case 'SAR': return 'ر.س';
+            case 'ARS':
+            case 'CAD': return 'C$ ';
+            case 'NZD': return 'NZ$ ';
+            case 'CLP':
+            case 'COP':
+            case 'MXN':
+            case 'SGD': return 'S$ ';
+            case 'AUD': return 'A$ ';
+            case 'USD': return '$ ';
+            case 'GBP': return '£ ';
+            case 'CHF': return 'CHF ';
+            case 'ZAR': return 'S ';
+            case 'RUB': return '₽ ';
+            case 'QAR': return 'ر.ق ';
+            case 'MUR':
+            case 'NPR': return '₨ ';
+            case 'MYR': return 'RM ';
+            case 'KPW':
+            case 'KRW': return '₩ ';
+            case 'JPY': return '¥ ';
+            case 'IDR': return 'Rp ';
+            case 'VND': return '₫ ';
+            case 'KWD': return 'د.ك ';
+            case 'AED': return 'د.إ ';
+            case 'OMR': return 'ر.ع. ';
+            case 'BOB': return '$ ';
+            case 'AZN': return '₼ ';
+            case 'THB': return '฿ ';
+            default : return $code;
+        }
+    }
+
