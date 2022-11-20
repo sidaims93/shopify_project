@@ -94,7 +94,7 @@
                                             </td>
                                             <td style="display: none;" class="fulfill-th">
                                                 @if($item['fulfillable_quantity'] > 0)
-                                                <a href="#" class="btn btn-primary fulfill_this_item" data-line_item_id="{{$item['id']}}" data-qty="{{$item['quantity']}}">Fulfill</a>
+                                                    <a href="#" class="btn btn-primary fulfill_this_item" data-line_item_id="{{$item['id']}}" data-qty="{{$item['quantity']}}">Fulfill</a>
                                                 @endif
                                             </td>
                                         </tr>
@@ -259,6 +259,7 @@
                     async: false,
                     success: function (response) {
                         console.log(response);
+                        //window.top.location.reload();
                     }
                 });
             });

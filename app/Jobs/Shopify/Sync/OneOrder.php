@@ -85,31 +85,34 @@ class OneOrder implements ShouldQueue {
 
     public function handle() {
         try{
-            $since_id = 0;
             $payload = [];
             do{
                 $orders_payload = [];
-                $endpoint = getShopifyURLForStore('orders/'.$this->order_id.'.json?since_id='.$since_id, $this->store);
+                $endpoint = getShopifyURLForStore('orders/'.$this->order_id.'.json', $this->store);
                 $headers = getShopifyHeadersForStore($this->store, 'GET');
                 $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers);
                 if(isset($response) && isset($response['statusCode']) && $response['statusCode'] === 200 && is_array($response) && is_array($response['body']['order']) && count($response['body']['order']) > 0) {
                     $payload = $response['body']['order'];
-                    foreach($payload as $shopifyOrderJsonArray){
+                    $temp_payload = [];    
                         $temp_payload = [];
-                        foreach($shopifyOrderJsonArray as $key => $v)
+                    $temp_payload = [];    
+                        $temp_payload = [];
+                    $temp_payload = [];    
+                        $temp_payload = [];
+                    $temp_payload = [];    
+                    foreach($payload as $key => $v)
                             $temp_payload[$key] = is_array($v) ? json_encode($v) : $v;
-                        $temp_payload = $this->store->getOrdersPayload($temp_payload);
-                        $temp_payload['store_id'] = (int) $this->store->table_id;
-                        $province_and_country = $this->getShippingAddressProvinceAndCountry($shopifyOrderJsonArray);
-                        $temp_payload = array_merge($province_and_country, $temp_payload);
-                        $since_id = $shopifyOrderJsonArray['id'];
-                        $orders_payload[] = $temp_payload;
-                    } 
+                    $temp_payload = $this->store->getOrdersPayload($temp_payload);
+                    $temp_payload['store_id'] = (int) $this->store->table_id;
+                    $province_and_country = $this->getShippingAddressProvinceAndCountry($payload);
+                    $temp_payload = array_merge($province_and_country, $temp_payload);
+                    $orders_payload[] = $temp_payload;
+                
                     $ordersTableString = $this->getOrdersTableString($orders_payload);
                     if($ordersTableString !== null)
                         $this->insertOrders($ordersTableString);    
                 } else { $payload = null; } 
-            } while($payload !== null && count($payload) > 0);
+            } while(false);
         } catch (Exception $e) { 
             Log::critical(['code' => $e->getCode(), 'message' => $e->getMessage(), 'trace' => json_encode($e->getTrace())]); 
             throw $e;
