@@ -97,10 +97,10 @@
                                                     @if($item['fulfillment_service'] === 'manual')
                                                         <a href="#" class="btn btn-primary fulfill_this_item" data-line_item_id="{{$item['id']}}" data-qty="{{$item['quantity']}}">Fulfill</a>
                                                     @else
-                                                        <span class="badge rounded-pill bg-danger">Un-fulfillable</span>
+                                                        <span class="badge bg-danger">Un-fulfillable</span>
                                                     @endif
                                                 @else 
-                                                    <span class="badge rounded-pill bg-success">Fulfilled</span>
+                                                    <span class="badge bg-success">Fulfilled</span>
                                                 @endif
                                             </td>
                                         </tr>
