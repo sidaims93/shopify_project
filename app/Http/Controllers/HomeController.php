@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller {
+    use RequestTrait;
     /**
      * Create a new controller instance.
      *
@@ -72,5 +74,12 @@ class HomeController extends Controller {
                 'customers_count' => 0
             ];
         }
+    }
+
+    public function testDocker() {
+        $endpoint = getDockerURL('ping/processor', 8010);
+        $headers = getDockerHeaders();
+        $response = $this->makeADockerAPICall($endpoint, $headers);
+        return response()->json($response);
     }
 }

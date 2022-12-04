@@ -71,4 +71,23 @@ trait RequestTrait {
             return ['error' => $e->getMessage()];
         }
     }
+    
+    public function makeADockerAPICall($endpoint, $headers, $method = 'GET') {
+        try {
+            $client = new Client();
+            $response = null;
+                $response = $client->request($method, $endpoint, [ 'headers' => $headers ]);
+            return [
+                'statusCode' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody(), true),
+                //'headers' => $response->getHeaders()
+            ];
+        } catch(Exception $e) {
+            return [
+                'statusCode' => $e->getCode(),
+                'message' => $e->getMessage(),
+                'body' => null
+            ];
+        }
+    }
 }

@@ -1,5 +1,13 @@
 <?php
 
+    function getDockerURL($path, $port) {
+        return 'http://localhost:'.$port.'/'.$path;
+    }
+
+    function getDockerHeaders() {
+        return ['Content-Type' => 'application/json'];
+    }
+
     function getShopifyURLForStore($endpoint, $store) {
         return checkIfStoreIsPrivate($store) ? 
             'https://'.$store['api_key'].':'.$store['api_secret_key'].'@'.$store['myshopify_domain'].'/admin/api/'.config('custom.shopify_api_version').'/'.$endpoint 

@@ -1,0 +1,44 @@
+version: '1'
+services:
+
+  processor:
+    image: "processor:1"
+    container_name: "processor"
+    restart: always
+    environment:
+      - NODE_ENV=dev
+    network_mode: host
+    depends_on: 
+      - redis
+      - mysql 
+    build: 
+      context: ./docker_services/processor
+      dockerfile: dockerfile
+    
+      
+  mysql: 
+    image: "mysql/mysql-server:8.0"
+    restart: always
+    container_name: "mysql"
+    ports: 
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_ROOT_HOST: "%"
+
+  redis:
+    image: "redis"
+    restart: always
+    container_name: "redis"
+    volumes:
+      - redis-data:/data
+    ports:
+        - "6379:6379"
+
+  
+
+volumes:
+  mysql-data:
+  redis-data:
