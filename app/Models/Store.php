@@ -77,4 +77,19 @@ class Store extends Model {
             $temp[$column] = $payload[$column] ?? null;
         return $temp;
     }
+
+    /*
+    public function getLocationsStorePayload() {
+        $return_arr = [];
+        try {
+            $locations = $this->getLocations;
+            if($locations !== null && $locations->count() > 0) 
+                foreach($locations as $location)
+                    if($location->isNotAFulfillmentServiceLocation())
+                        $return_arr[$location['name']] = $location;
+        } catch(Exception $e) {
+            $return_arr = [];
+        }
+        return $return_arr;
+    } */
 }

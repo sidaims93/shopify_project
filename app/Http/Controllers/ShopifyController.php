@@ -54,7 +54,7 @@ class ShopifyController extends Controller {
                 $line_items = $fulfillment_order->line_items;
                 foreach($line_items as $item) {
                     if($item['line_item_id'] === $search) // Found it!
-                        return $line_items;
+                        return $fulfillment_order;
                 }
             }
             return null;
@@ -93,24 +93,64 @@ class ShopifyController extends Controller {
         return $temp_payload;
     }
 
+    private function checkIfCanBeFulfilledDirectly($fulfillment_order) {
+        return in_array('request_fulfillment', $fulfillment_order->supported_actions);
+    }
+
+    private function getLineItemsByFulifllmentOrderPayload($line_items, $request) {
+        $search = (int) $request['lineItemId'];
+        foreach($line_items as $line_item)
+            if($line_item['line_item_id'] === $search) 
+                return implode(',', [
+                    'fulfillmentOrderId: "gid://shopify/FulfillmentOrder/'.$line_item['fulfillment_order_id'].'"',
+                    'fulfillmentOrderLineItems: { id: "gid://shopify/FulfillmentOrderLineItem/'.$line_item['id'].'", quantity: '.(int) $request['no_of_packages'].' }'
+                ]);
+    }
+
+    private function getGraphQLPayloadForFulfillment($line_items, $request) {
+        $temp = [];
+        $temp[] = 'notifyCustomer: '.($request['notify_customer'] === 'on' ? 'true':'false');
+        $temp[] = 'trackingInfo: { company: "'.$request['shipping_company'].'", number: "'.$request['number'].'", url: "'.$request['tracking_url'].'"}';
+        $temp[] = 'lineItemsByFulfillmentOrder: [{ '.$this->getLineItemsByFulifllmentOrderPayload($line_items, $request).' }]';
+        return implode(',', $temp);
+    }
+
+    private function getFulfillmentV2PayloadForFulfillment($line_items, $request) {
+        $fulfillmentV2Mutation = 'fulfillmentCreateV2 (fulfillment: {'.$this->getGraphQLPayloadForFulfillment($line_items, $request).'}) { 
+            fulfillment { id }
+            userErrors { field message }
+        }';
+        $mutation = 'mutation MarkAsFulfilledSubmit{ '.$fulfillmentV2Mutation.' }';
+        return ['query' => $mutation];
+    }
+
     public function fulfillOrder(FulfillOrder $request) {
         try {
             $request = $request->all();
             $user = Auth::user();
             $store = $user->getShopifyStore;
             $order = $store->getOrders()->where('table_id', (int) $request['order_id'])->first();
-            $fulfillment_line_item = $this->getFulfillmentLineItem($request, $order);
+            $fulfillment_order = $this->getFulfillmentLineItem($request, $order);
             
-            if($fulfillment_line_item !== null) {
-                
-                $payload = $this->getPayloadForFulfillment($fulfillment_line_item, $request);
-                $endpoint = getShopifyURLForStore('fulfillments.json', $store);
+            if($fulfillment_order !== null) {
+                $check = $this->checkIfCanBeFulfilledDirectly($fulfillment_order);
+                if(!$check) {
+                    $payload = $this->getFulfillmentV2PayloadForFulfillment($fulfillment_order->line_items, $request);
+                    $api_endpoint = 'graphql.json';
+                } else {
+                    $payload = $this->getPayloadForFulfillment($fulfillment_order->line_items, $request);
+                    $api_endpoint = 'fulfillments.json';
+                }
+
+                $endpoint = getShopifyURLForStore($api_endpoint, $store);    
                 $headers = getShopifyHeadersForStore($store);
-                $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
-                
-                if($response['statusCode'] === 201)
+                $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload); 
+
+                if($response['statusCode'] === 201 || $response['statusCode'] === 200)
                     OneOrder::dispatch($user, $store, $order->id);
-                
+
+                Log::info('Response for fulfillment');
+                Log::info(json_encode($response));
                 return response()->json($response);
             }
             return response()->json(['status' => false]);
@@ -266,5 +306,13 @@ class ShopifyController extends Controller {
         } catch(Exception $e) {
             dd($e->getMessage().' '.$e->getLine());
         }
+    }
+
+    public function syncOrder($id) {
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $order = $store->getOrders()->where('table_id', $id)->select('id')->first();
+        OneOrder::dispatchNow($user, $store, $order->id);
+        return redirect()->route('shopify.order.show', $id)->with('success', 'Order synced!');
     }
 }

@@ -94,7 +94,13 @@
                                             </td>
                                             <td style="display: none;" class="fulfill-th">
                                                 @if($item['fulfillable_quantity'] > 0)
-                                                <a href="#" class="btn btn-primary fulfill_this_item" data-line_item_id="{{$item['id']}}" data-qty="{{$item['quantity']}}">Fulfill</a>
+                                                    @if($item['fulfillment_service'] === 'manual')
+                                                        <a href="#" class="btn btn-primary fulfill_this_item" data-line_item_id="{{$item['id']}}" data-qty="{{$item['quantity']}}">Fulfill</a>
+                                                    @else
+                                                        <span class="badge bg-danger">Un-fulfillable</span>
+                                                    @endif
+                                                @else 
+                                                    <span class="badge bg-success">Fulfilled</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -259,6 +265,7 @@
                     async: false,
                     success: function (response) {
                         console.log(response);
+                        //window.top.location.reload();
                     }
                 });
             });
