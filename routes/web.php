@@ -42,6 +42,10 @@ Route::middleware(['auth', 'permission:all-access'])->group(function () {
     Route::resource('stores', SuperAdminController::class);
     Route::get('notifications', [SuperAdminController::class, 'sendIndex'])->name('real.time.notifications');
     Route::post('send/message', [SuperAdminController::class, 'sendMessage'])->name('send.web.message');
+
+    //ElasticSearch Routes
+    Route::get('elasticsearch/index', [HomeController::class, 'indexElasticSearch'])->name('elasticsearch.index');
+    Route::post('search/store', [HomeController::class, 'searchStore'])->name('search.store');
 });
 
 Route::middleware(['two_fa', 'auth'])->group(function () {

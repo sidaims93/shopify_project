@@ -82,4 +82,24 @@ class HomeController extends Controller {
         $response = $this->makeADockerAPICall($endpoint, $headers);
         return response()->json($response);
     }
+    
+    public function indexElasticSearch() {
+        $endpoint = getDockerURL('index/elasticsearch', 8010);
+        $headers = getDockerHeaders();
+        $response = $this->makeADockerAPICall($endpoint, $headers);
+        return back()->with('success', 'Indexing Complete. Response '.json_encode($response));
+    }
+    
+    public function searchStore(Request $request) {
+        if($request->ajax()) {
+            if($request->has('searchTerm')) {
+                $searchTerm = $request->searchTerm;
+                $endpoint = getDockerURL('search/store?search='.$searchTerm, 8010);
+                $headers = getDockerHeaders();
+                $response = $this->makeADockerAPICall($endpoint, $headers);
+                return response()->json($response);
+            }
+        }
+        return response()->json(['status' => false, 'message' => 'Invalid Request']);
+    }
 }

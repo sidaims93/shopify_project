@@ -21,9 +21,11 @@
 
           <div class="card">
             <div class="card-body">
-              {{-- <h5 class="card-title">Datatables</h5>
-              <p>Add lightweight datatables to your project with using the <a href="https://github.com/fiduswriter/Simple-DataTables" target="_blank">Simple DataTables</a> library. Just add <code>.datatable</code> class name to any table you wish to conver to a datatable</p> --}}
-
+              <br>
+              <div class="row">
+                <input type="text" placeholder="Search store here..." class="form-control search_store" style="width:50%">
+              </div>
+              <br>
               <!-- Table with stripped rows -->
               <table class="table datatable">
                 <thead>
@@ -56,4 +58,33 @@
         </div>
       </div>
     </section>
+@endsection
+
+
+@section('scripts')
+  <script>
+    $(document).ready(function () {
+      $('.search_store').keyup(function () {
+        var el = $(this);
+        var val = el.val();
+        console.log(val);
+
+        if(val.length > 2) {
+          $.ajax({
+            url: "{{route('search.store')}}",
+            type: 'POST',
+            async: false,
+            data: {"searchTerm" : val},
+            success: function (response) {
+              if(response.status) {
+                console.log(response);
+              } else {
+                console.log(response);
+              }
+            }
+          });
+        }
+      })
+    })
+  </script>
 @endsection

@@ -37,8 +37,37 @@ services:
     ports:
         - "6379:6379"
 
-  
+  elasticsearch: 
+    image: "docker.elastic.co/elasticsearch/elasticsearch:7.10.2"
+    restart: always
+    container_name: "dev.elasticsearch"
+    ports: 
+      - 9200:9200
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    environment: 
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - "elastic"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.2
+    container_name: "dev.kibana"
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - "elastic"
 
 volumes:
   mysql-data:
   redis-data:
+  elasticsearch-data:
+
+networks:
+  elastic:
+    driver: bridge
