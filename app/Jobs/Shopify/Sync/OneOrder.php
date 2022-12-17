@@ -94,14 +94,8 @@ class OneOrder implements ShouldQueue {
                 if(isset($response) && isset($response['statusCode']) && $response['statusCode'] === 200 && is_array($response) && is_array($response['body']['order']) && count($response['body']['order']) > 0) {
                     $payload = $response['body']['order'];
                     $temp_payload = [];    
-                        $temp_payload = [];
-                    $temp_payload = [];    
-                        $temp_payload = [];
-                    $temp_payload = [];    
-                        $temp_payload = [];
-                    $temp_payload = [];    
                     foreach($payload as $key => $v)
-                            $temp_payload[$key] = is_array($v) ? json_encode($v) : $v;
+                        $temp_payload[$key] = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v;
                     $temp_payload = $this->store->getOrdersPayload($temp_payload);
                     $temp_payload['store_id'] = (int) $this->store->table_id;
                     $province_and_country = $this->getShippingAddressProvinceAndCountry($payload);

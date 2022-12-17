@@ -225,7 +225,7 @@ class Order implements ShouldQueue {
                     foreach($payload as $shopifyOrderJsonArray){
                         $temp_payload = [];
                         foreach($shopifyOrderJsonArray as $key => $v)
-                            $temp_payload[$key] = is_array($v) ? json_encode($v) : $v;
+                            $temp_payload[$key] = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v;
                         $temp_payload = $this->store->getOrdersPayload($temp_payload);
                         $temp_payload['store_id'] = (int) $this->store->table_id;
                         $province_and_country = $this->getShippingAddressProvinceAndCountry($shopifyOrderJsonArray);
