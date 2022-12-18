@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\URL;
+use Laravel\Cashier\Cashier;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      * @return void
      */
     public function boot() {
+
+        Cashier::ignoreMigrations();
 
         if($this->app->environment('production')) {
             URL::forceScheme('https');

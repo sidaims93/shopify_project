@@ -8,6 +8,7 @@ use App\Http\Controllers\LoginSecurityController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ShopifyController;
+use App\Http\Controllers\StripeController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WebhooksController;
@@ -59,6 +60,13 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
         Route::get('consume/credits', [BillingController::class, 'consumeCredits'])->name('consume.credits');
     });
     
+    Route::middleware(['two_fa', 'auth', 'is_private_app'])->group(function () {
+        Route::get('subscriptions', [StripeController::class, 'index'])->name('subscriptions.index');
+        Route::post('add.card.user', [StripeController::class, 'addCardToUser'])->name('add.card.user');
+        Route::get('purchase/subscription/{id}', [StripeController::class, 'purchaseSubscription'])->name('purchase.subscription');
+        Route::get('purchase/credits/{id}', [StripeController::class, 'purchaseOneTimeCredits'])->name('purchase.credits');
+    });
+
     Route::prefix('shopify')->group(function () {
         Route::middleware('permission:write-products|read-products')->group(function () {
             Route::get('products', [ShopifyController::class, 'products'])->name('shopify.products');

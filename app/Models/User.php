@@ -8,13 +8,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
     
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, Billable;
     
     protected $with = ['getShopifyStore'];
     /**
@@ -26,7 +27,11 @@ class User extends Authenticatable {
         'name',
         'email',
         'password',
-        'store_id'
+        'store_id',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at'
     ];
 
     /**
@@ -66,6 +71,14 @@ class User extends Authenticatable {
 
     public function getLastPlanInfo() {
         return $this->hasOne(UserPlans::class, 'user_id')->latest();
+    }
+
+    public function getStripeCustomerDetails() {
+        if($this->stripe_id !== null && strlen($this->stripe_id) > 0) {
+            return $this->stripe_id;
+        }
+        $customer = $this->createOrGetStripeCustomer();
+        $this->update(['stripe_id' => $customer->id]);
     }
 
     public function assignCredits($credits) {

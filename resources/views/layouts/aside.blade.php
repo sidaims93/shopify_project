@@ -54,6 +54,16 @@
           </a>
         </li>
         @endrole
+
+      @else 
+      @role('Admin')
+        <li class="nav-item">
+          <a class="nav-link collapsed" href="{{route('subscriptions.index')}}">
+            <i class="bi bi-cash"></i>
+            <span>Subscriptions</span>
+          </a>
+        </li>
+        @endrole
       @endif
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{route('show2FASettings')}}">

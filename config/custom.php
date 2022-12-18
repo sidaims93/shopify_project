@@ -4,6 +4,8 @@ return [
     'shopify_api_key' => env('SHOPIFY_API_KEY', '8271b83e7ad33fb6a78b9f915d61749e'),
     'shopify_api_secret' => env('SHOPIFY_API_SECRET', '44cf53b978770d7d0652c85aad4634f7'),
     'shopify_api_version' => '2022-07',
+    'stripe_api_key' => env('STRIPE_KEY', ''),
+    'stripe_api_secret' => env('STRIPE_SECRET', ''),
     'api_scopes' => [
         'write_orders',
         'write_fulfillments',
@@ -51,6 +53,23 @@ return [
             'order_table_id' => 'int', 'id' => 'int', 'shop_id' => 'int', 'order_id' => 'int', 'assigned_location_id' => 'int', 'request_status' => 'string',
             'status' => 'string', 'supported_actions' => 'string', 'fulfill_at' => 'string', 'fulfill_by' => 'string', 'destination' => 'string',
             'line_items' => 'string', 'delivery_method' => 'string', 'assigned_location' => 'string', 'merchant_requests' => 'string'
+        ]
+    ],
+    'one_time_payments' => [
+        1 => [
+            'name' => 'Simple',
+            'price' => 4.99,
+            'credits' => 500
+        ],
+        2 => [
+            'name' => 'Extra',
+            'price' => 9.99,
+            'credits' => 2500
+        ],
+        3 => [
+            'name' => 'Large',
+            'price' => 14.99,
+            'credits' => 5000
         ]
     ]
 ];
