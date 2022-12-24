@@ -8,8 +8,13 @@
                 <h5>Your remaining credits: @if(isset($credits) && $credits !== null && $credits !== false) {{$credits}} @else {{$last_plan_info->credits}} @endif</h5>
             </div> 
         @endif
-        <div class="col-8">
-            <h1>Subscriptions</h1>
+        <div class="row">
+            <div class="col-8">
+                <h1>Subscriptions</h1>
+            </div>
+            <div class="col-4">
+                <a style="float:right" href="{{route('billing.portal')}}" class="btn btn-md btn-primary">View Invoices Info</a>
+            </div>    
         </div>
     </div>
     @if(!$user->hasPaymentMethod())

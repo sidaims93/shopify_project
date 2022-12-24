@@ -65,6 +65,7 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
         Route::post('add.card.user', [StripeController::class, 'addCardToUser'])->name('add.card.user');
         Route::get('purchase/subscription/{id}', [StripeController::class, 'purchaseSubscription'])->name('purchase.subscription');
         Route::get('purchase/credits/{id}', [StripeController::class, 'purchaseOneTimeCredits'])->name('purchase.credits');
+        Route::get('billing-portal', [StripeController::class, 'billingPortal'])->name('billing.portal');
     });
 
     Route::prefix('shopify')->group(function () {

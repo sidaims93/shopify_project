@@ -104,4 +104,9 @@ class StripeController extends Controller {
             return back()->with('error', $e->getMessage().' '.$e->getLine());
         }
     }
+
+    public function billingPortal() {
+        $user = Auth::user();
+        return $user->redirectToBillingPortal();
+    }
 }
