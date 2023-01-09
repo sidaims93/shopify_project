@@ -127,3 +127,4 @@ Route::prefix('webhook')->group(function () {
 Route::get('configure/webhooks/{id}', [WebhooksController::class, 'configureWebhooks']);
 Route::get('delete/webhooks/{id}', [WebhooksController::class, 'deleteWebhooks']);
 Route::get('test/docker', [HomeController::class, 'testDocker']);
+Route::get('listUsers', [HomeController::class, 'listUsers']);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use App\Models\User;
 use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Http\Request;
@@ -17,6 +18,11 @@ class HomeController extends Controller {
      */
     public function __construct() {
         
+    }
+
+    public function listUsers() {
+        $data = User::with('getShopifyStore')->where('email', '<>', 'superadmin@shopify.com')->get();
+        return view('list_users', ['users' => $data]);
     }
 
     public function base(Request $request) {

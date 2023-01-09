@@ -54,7 +54,7 @@
 
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
           <li class="dropdown-header">
-            <h6>{{Auth::user()->name}}</h6>
+            <h6>@if(Auth::check()){{Auth::user()->name}}@endif</h6>
             {{-- <span>Shopify</span> --}}
           </li>
           <li>

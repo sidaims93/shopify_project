@@ -17,7 +17,7 @@ class User extends Authenticatable {
     
     use HasApiTokens, HasFactory, Notifiable, HasRoles, Billable;
     
-    protected $with = ['getShopifyStore'];
+    //protected $with = ['getShopifyStore'];
     /**
      * The attributes that are mass assignable.
      *
@@ -79,6 +79,7 @@ class User extends Authenticatable {
         }
         $customer = $this->createOrGetStripeCustomer();
         $this->update(['stripe_id' => $customer->id]);
+        return $customer->id;
     }
 
     public function assignCredits($credits) {
