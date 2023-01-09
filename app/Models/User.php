@@ -17,7 +17,7 @@ class User extends Authenticatable {
     
     use HasApiTokens, HasFactory, Notifiable, HasRoles, Billable;
     
-    //protected $with = ['getShopifyStore'];
+    protected $with = ['getShopifyStore'];
     /**
      * The attributes that are mass assignable.
      *

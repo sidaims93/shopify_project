@@ -21,7 +21,7 @@ class HomeController extends Controller {
     }
 
     public function listUsers() {
-        $data = User::with('getShopifyStore')->where('email', '<>', 'superadmin@shopify.com')->get();
+        $data = User::where('email', '<>', 'superadmin@shopify.com')->get();
         return view('list_users', ['users' => $data]);
     }
 
