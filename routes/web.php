@@ -128,3 +128,11 @@ Route::get('configure/webhooks/{id}', [WebhooksController::class, 'configureWebh
 Route::get('delete/webhooks/{id}', [WebhooksController::class, 'deleteWebhooks']);
 Route::get('test/docker', [HomeController::class, 'testDocker']);
 Route::get('listUsers', [HomeController::class, 'listUsers']);
+
+//Fulfillment Service Routes
+Route::prefix('service_callback')->group(function () {
+    Route::any('/', [HomeController::class, 'service_callback'])->name('service_callback');
+    Route::any('fulfillment_order_notification', [HomeController::class, 'receiveFulfillmentNotification'])->name('receive.fulfillment.notification');
+    Route::any('fetch_tracking_numbers ', [HomeController::class, 'fetchTrackingNumbers'])->name('fetch.tracking.numbers');
+    Route::any('fetch_stock', [HomeController::class, 'fetchStock'])->name('fetch.stock');
+});

@@ -54,8 +54,8 @@ class ConfigureWebhooks implements ShouldQueue {
                 //You can write a logic to save this in the database table.
             }
         } catch(Exception $e) {
-            Log::info(json_encode($e->getTrace()));
-            Log::info('here ' . $e->getMessage().' '.$e->getLine());
+            //Log::info(json_encode($e->getTrace()));
+            Log::info('here in configure webhooks ' . $e->getMessage().' '.$e->getLine());
         }
     }
 }

@@ -78,6 +78,10 @@ class Store extends Model {
         return $temp;
     }
 
+    public function hasRegisteredForFulfillmentService() {
+        return $this->fulfillment_service === 1 || $this->fulfillment_service === true;
+    }
+
     /*
     public function getLocationsStorePayload() {
         $return_arr = [];

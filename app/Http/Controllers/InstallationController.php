@@ -12,9 +12,9 @@ use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
+use Throwable;
 
 class InstallationController extends Controller {
     private $api_scopes, $api_key, $api_secret;
@@ -80,6 +80,7 @@ class InstallationController extends Controller {
                     $shop = $request->shop;
                     $code = $request->code;
                     $accessToken = $this->requestAccessTokenFromShopifyForThisStore($shop, $code);
+                    Log::info('Access Token '.$accessToken);
                     if($accessToken !== false && $accessToken !== null) {
                         $shopDetails = $this->getShopDetailsFromShopify($shop, $accessToken);
                         $saveDetails = $this->saveStoreDetailsToDatabase($shopDetails, $accessToken);
@@ -129,6 +130,7 @@ class InstallationController extends Controller {
             foreach(config('custom.default_permissions') as $permission)
                 $user->givePermissionTo($permission);
             ConfigureWebhooks::dispatch($store_db->table_id);
+            $this->registerForFulfillmentService($store_db);
             Session::flash('success', 'Installation for your store '.$shopDetails['name'].' has completed and the credentials have been sent to '.$shopDetails['email'].'. Please login.');
             //Create ur own mail handler here
             //Send the credentials to the registered email address on Shopify.
@@ -140,9 +142,34 @@ class InstallationController extends Controller {
         }
     }
 
-    public function completeInstallation(Request $request) {
-        //At this point the installation is complete so redirect the browser to either the login page or anywhere u want.
-        print_r('Installation complete !!');exit;
+    public function registerForFulfillmentService($store) {
+        try {
+            $endpoint = getShopifyURLForStore('fulfillment_services.json', $store->toArray());
+            $headers = getShopifyHeadersForStore($store->toArray());
+            $body = [
+                "fulfillment_service" => [
+                    "name" => config('custom.fulfillment_service_name'),
+                    "callback_url" => route('service_callback'),
+                    "inventory_management" => true,
+                    "tracking_support" => true,
+                    "fulfillment_orders_opt_in" => true,
+                    "requires_shipping_method" => true,
+                    "format" => "json"
+                ]
+            ];
+            $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $body);
+            $store->update(['fulfillment_service_response' => json_encode($response)]);
+            if(isset($response['statusCode']) && $response['statusCode'] == 201)
+                $store->update(['fulfillment_service' => true, 'fulfillment_orders_opt_in' => true]);
+            Log::info('Response received from shopify for fulfillment service creation ');
+            Log::info($response);
+
+        } catch(Exception $e) {
+            Log::info('FS '.$e->getMessage().' '.$e->getLine());
+        
+        } catch(Throwable $e) {
+            Log::info('FS '.$e->getMessage().' '.$e->getLine());
+        }
     }
 
     private function getShopDetailsFromShopify($shop, $accessToken) {
@@ -152,6 +179,7 @@ class InstallationController extends Controller {
             $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers);
             if($response['statusCode'] == 200) {
                 $body = $response['body'];
+                Log::info($body);
                 if(!is_array($body)) $body = json_decode($body, true);
                 return $body['shop'] ?? null;
             } else {

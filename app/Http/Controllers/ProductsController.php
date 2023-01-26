@@ -10,12 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProductsController extends Controller {
-    private $legacy;
     use RequestTrait, FunctionTrait;
 
     public function __construct() {
         $this->middleware('auth');        
-        $this->legacy = 1;
     }
 
     public function create() {
@@ -26,11 +24,11 @@ class ProductsController extends Controller {
     }
 
     private function getLocationsForStore($store) {
-        $locations = $store->getLocations()->where('legacy', $this->legacy)->select(['id', 'name', 'admin_graphql_api_id', 'legacy']);
-        if($this->legacy === 1) {
-            //Return only one of the locations because shopify wouldnt allow maintaining inventories via multiple shopify apps.
-            $locations = $locations->limit(1);
-        }
+        $locations = $store->getLocations()
+                           ->where(function ($query) use ($store) {
+                                return $store->hasRegisteredForFulfillmentService() ? $query->where('name', config('custom.fulfillment_service_name')) : true;
+                           })
+                           ->select(['id', 'name', 'admin_graphql_api_id', 'legacy']);
         //If not then you can select Shopify's default locations
         return $locations->get(); 
     }
@@ -53,17 +51,15 @@ class ProductsController extends Controller {
         $user = Auth::user();
         $store = $user->getShopifyStore;
         $locations = $this->getLocationsForStore($store);
-        $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublish($request, $locations).'}) { 
+        $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublish($store, $request, $locations).'}) { 
             product { id }
             userErrors { field message }
         }';
-        //dd($productCreateMutation);
         $mutation = 'mutation { '.$productCreateMutation.' }';
         $endpoint = getShopifyURLForStore('graphql.json', $store);
         $headers = getShopifyHeadersForStore($store);
         $payload = ['query' => $mutation];
         $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
-        //dd($response);
         Product::dispatch($user, $store);
         return back()->with('success', 'Product Created!');
     }
@@ -80,7 +76,7 @@ class ProductsController extends Controller {
         }
     }
 
-    private function getGraphQLPayloadForProductPublish($request, $locations) {
+    private function getGraphQLPayloadForProductPublish($store, $request, $locations) {
         $temp = [];
         $temp[] = 
           ' title: "'.$request['title'].'",
@@ -94,15 +90,14 @@ class ProductsController extends Controller {
             $temp[] = ' tags: ['.$this->returnTags($request['tags']).']';
         if(isset($request['variant_title']) && is_array($request['variant_title'])) {
             $temp[] = ' options: ["'.implode(', ',$request['variant_title']).'"]';
-            $temp[] = ' variants: ['.$this->getVariantsGraphQLConfig($request, $locations).']';
+            $temp[] = ' variants: ['.$this->getVariantsGraphQLConfig($store, $request, $locations).']';
         }  
 
         return implode(',', $temp);
     }
 
-    private function getVariantsGraphQLConfig($request, $locations) {
+    private function getVariantsGraphQLConfig($store, $request, $locations) {
         try {
-            //dd($request);
             if(is_array($request['variant_title'])) {
                 $str = [];
                 foreach($request['variant_title'] as $key => $variant_title){
@@ -114,7 +109,7 @@ class ProductsController extends Controller {
                         options: [ "'.$variant_title.'" ],
                         inventoryItem: {cost: '.$request['variant_price'][$key].', tracked: true},
                         inventoryQuantities: '.$this->getInventoryQuantitiesString($key, $request, $locations).',
-                        inventoryManagement: '. ( $this->legacy === 1 ? 'FULFILLMENT_SERVICE' : 'SHOPIFY' ).',
+                        inventoryManagement: '. ( $store->hasRegisteredForFulfillmentService() === 1 ? 'FULFILLMENT_SERVICE' : 'SHOPIFY' ).',
                         inventoryPolicy: DENY,                
                         price: '.$request['variant_price'][$key].' }';
                     }

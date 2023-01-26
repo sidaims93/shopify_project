@@ -162,7 +162,10 @@ class ShopifyController extends Controller {
     public function products() {
         $user = Auth::user();
         $store = $user->getShopifyStore;
-        $products = $store->getProducts()->select(['title', 'product_type', 'vendor', 'created_at'])->get();
+        $products = $store->getProducts()
+                          ->select(['title', 'product_type', 'vendor', 'created_at'])
+                          ->orderBy('created_at', 'desc')
+                          ->get();
         return view('products.index', ['products' => $products]);
     }
 

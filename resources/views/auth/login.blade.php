@@ -8,7 +8,7 @@
             <div class="container">
               <div class="row justify-content-center">
                 @if(\Session::has('success'))
-                <div class="alert alert-primary bg-primary text-light border-0 alert-dismissible fade show" role="alert"> {{\Session::get('success')}} </div>
+                <div class="alert alert-primary bg-primary text-center text-light border-0 alert-dismissible fade show" role="alert"> {{\Session::get('success')}} </div>
                 @endif
                 <div class="col-lg-4 col-md-6 d-flex flex-column align-items-center justify-content-center">
     

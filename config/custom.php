@@ -4,6 +4,7 @@ return [
     'shopify_api_key' => env('SHOPIFY_API_KEY', '8271b83e7ad33fb6a78b9f915d61749e'),
     'shopify_api_secret' => env('SHOPIFY_API_SECRET', '44cf53b978770d7d0652c85aad4634f7'),
     'shopify_api_version' => '2022-07',
+    'fulfillment_service_name' => 'App Fulifllment Service',
     'stripe_api_key' => env('STRIPE_KEY', ''),
     'stripe_api_secret' => env('STRIPE_SECRET', ''),
     'api_scopes' => [
@@ -12,7 +13,6 @@ return [
         'write_customers',
         'write_products',
         'read_third_party_fulfillment_orders',
-        'third_party_fulfillment_orders',
         'write_assigned_fulfillment_orders',
         'read_assigned_fulfillment_orders',
         'read_merchant_managed_fulfillment_orders',
