@@ -28,7 +28,10 @@ class ShopifyController extends Controller {
     public function orders() {
         $user = Auth::user();
         $store = $user->getShopifyStore;
-        $orders = $store->getOrders()->select(['table_id', 'financial_status', 'name', 'email', 'phone', 'created_at'])->paginate(15);
+        $orders = $store->getOrders()
+                        ->select(['table_id', 'financial_status', 'name', 'email', 'phone', 'created_at'])
+                        ->orderBy('table_id', 'desc')
+                        ->paginate(15);
         return view('orders.index', ['orders' => $orders]);
     }
 
@@ -126,6 +129,7 @@ class ShopifyController extends Controller {
 
     public function fulfillOrder(FulfillOrder $request) {
         try {
+            $sendAndAcceptresponse = null;
             $request = $request->all();
             $user = Auth::user();
             $store = $user->getShopifyStore;
@@ -138,6 +142,8 @@ class ShopifyController extends Controller {
                     $payload = $this->getFulfillmentV2PayloadForFulfillment($fulfillment_order->line_items, $request);
                     $api_endpoint = 'graphql.json';
                 } else {
+                    if($store->hasRegisteredForFulfillmentService()) 
+                        $sendAndAcceptresponse = $this->sendAndAcceptFulfillmentRequests($store, $fulfillment_order);    
                     $payload = $this->getPayloadForFulfillment($fulfillment_order->line_items, $request);
                     $api_endpoint = 'fulfillments.json';
                 }
@@ -151,12 +157,45 @@ class ShopifyController extends Controller {
 
                 Log::info('Response for fulfillment');
                 Log::info(json_encode($response));
-                return response()->json($response);
+                return response()->json(['response' => $response, 'sendAndAcceptresponse' => $sendAndAcceptresponse ?? null]);
             }
             return response()->json(['status' => false]);
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage().' '.$e->getLine()]);
         }
+    }
+
+    private function sendAndAcceptFulfillmentRequests($store, $fulfillment_order) {
+        try {
+            $responses = [];
+            $responses[] = $this->callFulfillmentRequestEndpoint($store, $fulfillment_order);
+            $responses[] = $this->callAcceptRequestEndpoint($store, $fulfillment_order);
+            return ['status' => true, 'message' => 'Done', 'responses' => $responses];
+        } catch(Exception $e) {
+            return ['status' => false, 'error' => $e->getMessage().' '.$e->getLine()];
+        }
+    }
+
+    private function callFulfillmentRequestEndpoint($store, $fulfillment_order) {
+        $endpoint = getShopifyURLForStore('fulfillment_orders/'.$fulfillment_order->id.'/fulfillment_request.json', $store);
+        $headers = getShopifyHeadersForStore($store);
+        $payload = [
+            'fulfillment_request' => [
+                'message' => 'Please fulfill ASAP'
+            ]
+        ];
+        return $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
+    }
+
+    private function callAcceptRequestEndpoint($store, $fulfillment_order) {
+        $endpoint = getShopifyURLForStore('fulfillment_orders/'.$fulfillment_order->id.'/fulfillment_request/accept.json', $store);
+        $headers = getShopifyHeadersForStore($store);
+        $payload = [
+            'fulfillment_request' => [
+                'message' => 'Accepted the request on '.date('F d, Y')
+            ]
+        ];
+        return $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
     }
 
     public function products() {

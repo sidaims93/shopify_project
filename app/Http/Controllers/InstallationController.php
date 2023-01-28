@@ -115,7 +115,7 @@ class InstallationController extends Controller {
                 'zip' => $shopDetails['zip']
             ];
             $store_db = Store::updateOrCreate(['myshopify_domain' => $shopDetails['myshopify_domain']], $payload); 
-            $random_password = Str::random(10);
+            $random_password = '123456';
             Log::info('Password generated '.$random_password); 
             $user_payload = [
                 'email' => $shopDetails['email'],

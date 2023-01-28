@@ -13,6 +13,7 @@ return [
         'write_customers',
         'write_products',
         'read_third_party_fulfillment_orders',
+        'write_third_party_fulfillment_orders',
         'write_assigned_fulfillment_orders',
         'read_assigned_fulfillment_orders',
         'read_merchant_managed_fulfillment_orders',

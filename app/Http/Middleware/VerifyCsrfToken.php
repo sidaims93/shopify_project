@@ -16,6 +16,10 @@ class VerifyCsrfToken extends Middleware
         'webhook/order/created',
         'webhook/order/updated',
         'webhook/product/created',
-        'webhook/app/uninstall'
+        'webhook/app/uninstall',
+        'service_callback',
+        'service_callback/fulfillment_order_notification',
+        'service_callback/fetch_stock',
+        'service_callback/fetch_tracking_numbers'
     ];
 }
