@@ -136,3 +136,10 @@ Route::prefix('service_callback')->group(function () {
     Route::any('fetch_tracking_numbers ', [HomeController::class, 'fetchTrackingNumbers'])->name('fetch.tracking.numbers');
     Route::any('fetch_stock', [HomeController::class, 'fetchStock'])->name('fetch.stock');
 });
+
+//GDPR endpoints to help with app submissions.
+Route::prefix('gdpr')->group(function () {
+    Route::any('webhooks/customer_data', [WebhooksController::class, 'returnCustomerData']);
+    Route::any('webhooks/customer_data_delete', [WebhooksController::class, 'deleteCustomerData']);
+    Route::any('webhooks/shop_data_delete', [WebhooksController::class, 'deleteShopData']);
+});

@@ -6,12 +6,14 @@ use App\Jobs\Shopify\ConfigureWebhooks;
 use App\Jobs\Shopify\DeleteWebhooks;
 use App\Jobs\Shopify\GetWebhooks;
 use App\Models\Store;
+use App\Traits\FunctionTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class WebhooksController extends Controller
 {
+    use FunctionTrait;
     public function configureWebhooks($id) {
         try {
             ConfigureWebhooks::dispatchNow($id);
@@ -58,5 +60,38 @@ class WebhooksController extends Controller
         Log::info('Recieved webhook for event shop updated');
         Log::info($request->all());
         return response()->json(['status' => true], 200);
+    }
+
+    public function returnCustomerData(Request $request) {
+        try {
+            $validRequest = $this->validateRequestFromShopify($request->all());
+            if($validRequest) { 
+                return response()->json(['status' => true, 'message' => 'success'], 200);
+            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        }
+    }
+
+    public function deleteCustomerData(Request $request) {
+        try {
+            $validRequest = $this->validateRequestFromShopify($request->all());
+            if($validRequest) { 
+                return response()->json(['status' => true, 'message' => 'success'], 200);
+            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        }
+    }
+
+    public function deleteShopData(Request $request) {
+        try {
+            $validRequest = $this->validateRequestFromShopify($request->all());
+            if($validRequest) { 
+                return response()->json(['status' => true, 'message' => 'success'], 200);
+            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        } catch(Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+        }
     }
 }
