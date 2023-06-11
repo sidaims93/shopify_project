@@ -11,6 +11,7 @@ use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
@@ -48,8 +49,19 @@ class InstallationController extends Controller {
                         $validAccessToken = $this->checkIfAccessTokenIsValid($storeDetails);
                         if($validAccessToken) {
                             //Token is valid for Shopify API calls so redirect them to the login page.
-                            return Redirect::route('login');
-                            //print_r('Token is valid in the database so redirect the user to the login page');exit;
+
+                            /**
+                             * Handle whether the app will render in Embed mode
+                             */
+                            $is_embedded = determineIfAppIsEmbedded();
+                            if($is_embedded) {
+                                $user = User::where('store_id', $storeDetails->table_id)->first();
+                                Auth::login($user);
+                                return redirect()->route('home');
+                            } else {
+                                return Redirect::route('login');
+                            } 
+                            
                         } else {
                             $endpoint = 'https://'.$request->shop.
                             '/admin/oauth/authorize?client_id='.$this->api_key.
@@ -80,16 +92,22 @@ class InstallationController extends Controller {
                     $shop = $request->shop;
                     $code = $request->code;
                     $accessToken = $this->requestAccessTokenFromShopifyForThisStore($shop, $code);
-                    Log::info('Access Token '.$accessToken);
                     if($accessToken !== false && $accessToken !== null) {
                         $shopDetails = $this->getShopDetailsFromShopify($shop, $accessToken);
-                        $saveDetails = $this->saveStoreDetailsToDatabase($shopDetails, $accessToken);
-                        if($saveDetails) {  
+                        $storeDetails = $this->saveStoreDetailsToDatabase($shopDetails, $accessToken);
+                        if($storeDetails) {  
                             //At this point the installation process is complete.
-                            return Redirect::route('login');
+                            $is_embedded = determineIfAppIsEmbedded();
+                            if($is_embedded) {
+                                $user = User::where('store_id', $storeDetails->table_id)->first();
+                                Auth::login($user);
+                                return redirect()->route('home');
+                            } else {
+                                return Redirect::route('login');
+                            }
                         } else {
                             Log::info('Problem during saving shop details into the db');
-                            Log::info($saveDetails);
+                            Log::info($storeDetails);
                             dd('Problem during installation. please check logs.');
                         }
                     } else throw new Exception('Invalid Access Token '.$accessToken);
@@ -135,7 +153,7 @@ class InstallationController extends Controller {
             //Create ur own mail handler here
             //Send the credentials to the registered email address on Shopify.
             //Mail::to($shopDetails['email'])->send(new InstallComplete($user_payload, $random_password));
-            return true;
+            return $store_db;
         } catch(Exception $e) {
             Log::info($e->getMessage().' '.$e->getLine());
             return false;

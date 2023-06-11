@@ -65,33 +65,36 @@ class WebhooksController extends Controller
     public function returnCustomerData(Request $request) {
         try {
             $validRequest = $this->validateRequestFromShopify($request->all());
-            if($validRequest) { 
-                return response()->json(['status' => true, 'message' => 'success'], 200);
-            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = $validRequest ? 
+                ['status' => true, 'message' => 'Not Found', 'code' => 200] : 
+                ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         } catch(Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         }
+        return response()->json($response, $response['code']);
     }
 
     public function deleteCustomerData(Request $request) {
         try {
             $validRequest = $this->validateRequestFromShopify($request->all());
-            if($validRequest) { 
-                return response()->json(['status' => true, 'message' => 'success'], 200);
-            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = $validRequest ? 
+                ['status' => true, 'message' => 'Not Found', 'code' => 200] : 
+                ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         } catch(Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         }
+        return response()->json($response, $response['code']);
     }
 
     public function deleteShopData(Request $request) {
         try {
             $validRequest = $this->validateRequestFromShopify($request->all());
-            if($validRequest) { 
-                return response()->json(['status' => true, 'message' => 'success'], 200);
-            } else return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = $validRequest ? 
+                ['status' => true, 'message' => 'Success', 'code' => 200] : 
+                ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         } catch(Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Unauthorised!'], 401);
+            $response = ['status' => false, 'message' => 'Unauthorised!', 'code' => 401];
         }
+        return response()->json($response, $response['code']);
     }
 }

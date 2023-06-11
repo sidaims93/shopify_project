@@ -7,6 +7,7 @@ return [
     'fulfillment_service_name' => 'App Fulifllment Service',
     'stripe_api_key' => env('STRIPE_KEY', ''),
     'stripe_api_secret' => env('STRIPE_SECRET', ''),
+    'app_embedded' => env('APP_EMBEDDED', false),
     'api_scopes' => [
         'write_orders',
         'write_fulfillments',

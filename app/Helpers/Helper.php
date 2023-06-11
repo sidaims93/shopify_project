@@ -96,3 +96,7 @@
         }
     }
 
+    function determineIfAppIsEmbedded() {
+        return config('custom.app_embedded') == 'true' || config('custom.app_embedded') == true;
+    }
+

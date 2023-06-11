@@ -1,4 +1,6 @@
-<aside id="sidebar" class="sidebar">
+@php $isEmbedded = determineIfAppIsEmbedded() @endphp
+
+<aside id="sidebar" class="sidebar" @if($isEmbedded) style="background-color:#f1f2f4" @endif>
 
     <ul class="sidebar-nav" id="sidebar-nav">
 
