@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 Route::get('/', [HomeController::class, 'base']);
 
+Route::get('validate-pincode', [HomeController::class, 'checkPincodeAvailability'])->name('product.check.availability');
 
 Route::prefix('devops')->middleware(['guest:devops'])->group(function () {
     Route::get('login', [DevOpsController::class, 'devOpsLogin'])->name('devops.login');

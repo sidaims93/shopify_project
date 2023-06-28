@@ -20,6 +20,7 @@ class VerifyCsrfToken extends Middleware
         'service_callback',
         'service_callback/fulfillment_order_notification',
         'service_callback/fetch_stock',
-        'service_callback/fetch_tracking_numbers'
+        'service_callback/fetch_tracking_numbers',
+        'validate-pincode'
     ];
 }

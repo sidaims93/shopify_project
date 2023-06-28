@@ -8,6 +8,7 @@ use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller {
     use RequestTrait;
@@ -27,6 +28,16 @@ class HomeController extends Controller {
 
     public function base(Request $request) {
         return redirect()->route('login');
+    }
+
+    public function checkPincodeAvailability(Request $request) {
+        Log::info('Request received for product pincode check');
+        Log::info($request->all());
+
+        //Put the validation logic here
+        $returnResp = ['status' => true, 'message' => 'Available'];
+
+        return response()->json($returnResp, 200);
     }
 
     /**
