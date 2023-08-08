@@ -8,6 +8,7 @@ return [
     'stripe_api_key' => env('STRIPE_KEY', ''),
     'stripe_api_secret' => env('STRIPE_SECRET', ''),
     'app_embedded' => env('APP_EMBEDDED', false),
+    'add_to_cart_tag_product' => 'buy-now',
     'api_scopes' => [
         'write_orders',
         'write_fulfillments',

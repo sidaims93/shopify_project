@@ -42,6 +42,7 @@
                   <th scope="col">Type</th>
                   <th scope="col">Vendor</th>
                   <th scope="col">Created Date</th>
+                  <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -54,6 +55,7 @@
                         <td>{{$product['product_type']}}</td>
                         <td>{{$product['vendor']}}</td>
                         <td>{{date('Y-m-d', strtotime($product['created_at']))}}</td>
+                        <td><a href="{{route('change.product.addToCart')}}?product_id={{$product['table_id']}}" class="btn btn-primary">{{$product->getAddToCartStatus()['message']}}</a></td>
                       </tr>
                     @endforeach
                   @endif

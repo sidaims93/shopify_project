@@ -8,6 +8,7 @@ use App\Traits\RequestTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ProductsController extends Controller {
     use RequestTrait, FunctionTrait;
@@ -132,5 +133,73 @@ class ProductsController extends Controller {
         $str .= implode(',', $temp_payload);
         $str .= ']';
         return $str;
+    }
+
+    public function changeProductAddToCartStatus(Request $request) {
+        try {
+            if($request->has('product_id')) {
+                $user = Auth::user();
+                $store = $user->getShopifyStore;
+                $targetTag = config('custom.add_to_cart_tag_product');
+                $product = $store->getProducts()->where('table_id', $request->product_id)->first();
+                $data = $product->getAddToCartStatus();
+                if($data['status'] === true) {
+                    //The tag is already present.
+                    //Just remove it from the tags and update the product.
+                    $tags = $product->tags;
+                    if($tags !== null && strlen($tags) > 0) {
+                        $tags = explode(',', $tags);
+                        if(in_array($targetTag, $tags)) {
+                            foreach($tags as $key => $tag) {
+                                if($tag === $targetTag) {
+                                    unset($tags[$key]);
+                                }
+                            }
+                        }
+                        $tags = implode(',', $tags);
+                    } else {
+                        $tags = '';
+                    }
+                } else {
+                    //Remove Add to Cart functionality here.
+                    //Basically meaning add the tag 'buy-now'
+                    $tags = $product->tags;
+                    if($tags !== null && strlen($tags) > 0) {
+                        $tags = explode(',', $tags);
+                        if(!in_array($targetTag, $tags)) {
+                            $tags[] = $targetTag;
+                        }
+
+                        $tags = implode(',', $tags); //Make it a string of tags
+                    } else {
+                        //No tags present
+                        $tags = $targetTag;
+                    }
+
+                    $endpoint = getShopifyURLForStore('products/'.$product->id.'.json', $store);
+                    $headers = getShopifyHeadersForStore($store);
+                    $payload = [
+                        'product' => [
+                            'id' => $product->id,
+                            'tags' => $tags
+                        ]
+                    ];
+
+                    $response = $this->makeAnAPICallToShopify('PUT', $endpoint, null, $headers, $payload);
+                    if(isset($response['statusCode']) && $response['statusCode'] === 200) {
+                        Product::dispatch($user, $store)->onConnection('sync');
+                        return back()->with('success', 'Status changed successfully!');
+                    } else {
+                        Log::info('Response from Shopify API call');
+                        Log::info($response);
+                        return back()->with('error', 'Not successful!');
+                    }
+                }
+            } else {
+                return back()->with('error', 'Please select a product');
+            }
+        } catch(Exception $e) {
+            return back()->with('error', $e->getMessage().' '.$e->getLine());
+        }
     }
 }

@@ -202,7 +202,7 @@ class ShopifyController extends Controller {
         $user = Auth::user();
         $store = $user->getShopifyStore;
         $products = $store->getProducts()
-                          ->select(['title', 'product_type', 'vendor', 'created_at'])
+                          ->select(['table_id', 'title', 'product_type', 'vendor', 'created_at', 'tags'])
                           ->orderBy('created_at', 'desc')
                           ->get();
         return view('products.index', ['products' => $products]);
@@ -229,7 +229,6 @@ class ShopifyController extends Controller {
             return response()->json(['status' => false, 'message' => 'Error :'.$e->getMessage().' '.$e->getLine()]);
         }
     }
-
 
     //Sync orders for Store using either GraphQL or REST API
     public function syncOrders() {
