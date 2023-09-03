@@ -220,7 +220,6 @@ class Order implements ShouldQueue {
                 $endpoint = getShopifyURLForStore('orders.json?since_id='.$since_id, $this->store);
                 $headers = getShopifyHeadersForStore($this->store, 'GET');
                 $response = $this->makeAnAPICallToShopify('GET', $endpoint, null, $headers);
-                dd($response);
                 if(isset($response) && isset($response['statusCode']) && $response['statusCode'] === 200 && is_array($response) && is_array($response['body']['orders']) && count($response['body']['orders']) > 0) {
                     $payload = $response['body']['orders'];
                     foreach($payload as $shopifyOrderJsonArray){
@@ -237,6 +236,9 @@ class Order implements ShouldQueue {
                     $ordersTableString = $this->getOrdersTableString($orders_payload);
                     if($ordersTableString !== null)
                         $this->insertOrders($ordersTableString);    
+                } else if(isset($response) && isset($response['statusCode']) && $response['statusCode'] == 403) {
+                    throw new Exception($response['message']);
+                    $payload = null;
                 } else { $payload = null; } 
             } while($payload !== null && count($payload) > 0);
         } catch (Exception $e) { 
