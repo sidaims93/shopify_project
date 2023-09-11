@@ -18,11 +18,12 @@ use Illuminate\Support\Facades\Session;
 use Throwable;
 
 class InstallationController extends Controller {
-    private $api_scopes, $api_key, $api_secret;
+    private $api_scopes, $api_key, $api_secret, $redirectURL;
     public function __construct() {
         $this->api_scopes = implode(',', config('custom.api_scopes'));
         $this->api_key = config('custom.shopify_api_key');
         $this->api_secret = config('custom.shopify_api_secret');
+        $this->redirectURL = 'https://emprintables.myshopify.com/';
     }
 
     use FunctionTrait, RequestTrait;
@@ -49,19 +50,7 @@ class InstallationController extends Controller {
                         $validAccessToken = $this->checkIfAccessTokenIsValid($storeDetails);
                         if($validAccessToken) {
                             //Token is valid for Shopify API calls so redirect them to the login page.
-
-                            /**
-                             * Handle whether the app will render in Embed mode
-                             */
-                            $is_embedded = determineIfAppIsEmbedded();
-                            if($is_embedded) {
-                                $user = User::where('store_id', $storeDetails->table_id)->first();
-                                Auth::login($user);
-                                return redirect()->route('home');
-                            } else {
-                                return Redirect::route('login');
-                            } 
-                            
+                            return Redirect::to($this->redirectURL);
                         } else {
                             $endpoint = 'https://'.$request->shop.
                             '/admin/oauth/authorize?client_id='.$this->api_key.
@@ -97,14 +86,7 @@ class InstallationController extends Controller {
                         $storeDetails = $this->saveStoreDetailsToDatabase($shopDetails, $accessToken);
                         if($storeDetails) {  
                             //At this point the installation process is complete.
-                            $is_embedded = determineIfAppIsEmbedded();
-                            if($is_embedded) {
-                                $user = User::where('store_id', $storeDetails->table_id)->first();
-                                Auth::login($user);
-                                return redirect()->route('home');
-                            } else {
-                                return Redirect::route('login');
-                            }
+                            return Redirect::to($this->redirectURL);
                         } else {
                             Log::info('Problem during saving shop details into the db');
                             Log::info($storeDetails);
